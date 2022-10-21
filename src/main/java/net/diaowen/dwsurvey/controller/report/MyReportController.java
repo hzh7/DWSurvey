@@ -1,4 +1,4 @@
-package net.diaowen.dwsurvey.controller.survey;
+package net.diaowen.dwsurvey.controller.report;
 
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
@@ -20,13 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/api/dwsurvey/app/survey")
-public class MySurveyController {
+@RequestMapping("/api/dwsurvey/app/report")
+public class MyReportController {
 
     @Autowired
     private AccountManager accountManager;
