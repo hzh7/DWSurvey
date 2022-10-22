@@ -158,20 +158,16 @@ public class AccountManager {
 	 * 取出当前登陆用户
 	 */
 	public User getCurUser(){
-		User user = new User();
-		user.setId("1");
-		user.setName("test");
-		return user;
-//		Subject subject=SecurityUtils.getSubject();
-//
-//		if(subject!=null){
-//			Object principal=subject.getPrincipal();
-//			if(principal!=null){
-//				User user = findUserByLoginName(principal.toString());
-//				return user;
-//			}
-//		}
-//		return null;
+		Subject subject=SecurityUtils.getSubject();
+
+		if(subject!=null){
+			Object principal=subject.getPrincipal();
+			if(principal!=null){
+				User user = findUserByLoginName(principal.toString());
+				return user;
+			}
+		}
+		return null;
 	}
 
 

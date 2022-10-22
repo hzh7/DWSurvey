@@ -68,8 +68,7 @@ public class MySurveyController {
     @ResponseBody
     public HttpResult<SurveyDirectory> info(String id) {
         try{
-//            User user = accountManager.getCurUser();
-            User user = new User();
+            User user = accountManager.getCurUser();
             if(user!=null){
                 surveyStatsManager.findBySurvey(id);
                 SurveyDirectory survey = surveyDirectoryManager.findUniqueBy(id);

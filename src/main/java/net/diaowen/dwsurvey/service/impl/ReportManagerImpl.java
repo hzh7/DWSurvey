@@ -27,32 +27,32 @@ public class ReportManagerImpl implements ReportManager {
     @Transactional
     @Override
     public void save(Report t) {
-        User user = accountManager.getCurUser();
-        String userId=t.getUserId();
-        String id=t.getId();
-        if(id==null){
-            t.setUserId(user.getId());
-            userId=t.getUserId();
-        }
-        if(userId!=null && userId.equals(user.getId())){
-            reportDao.save(t);
-            //保存SurveyDirectory
-            if(t.getDirType()==2){
-                SurveyDetail surveyDetailTemp=t.getSurveyDetail();
-
-                SurveyDetail surveyDetail=surveyDetailManager.getBySurveyId(id);
-                if(surveyDetail!=null){
-                    if(surveyDetailTemp!=null){
-                        surveyDetail.setSurveyNote(surveyDetailTemp.getSurveyNote());
-                    }
-                }else{
-                    surveyDetail=new SurveyDetail();
-                    surveyDetail.setSurveyNote("非常感谢您的参与！如有涉及个人信息，我们将严格保密。");
-                }
-                surveyDetail.setDirId(t.getId());
-                surveyDetailManager.save(surveyDetail);
-            }
-        }
+//        User user = accountManager.getCurUser();
+//        String userId=t.getUserId();
+//        String id=t.getId();
+//        if(id==null){
+//            t.setUserId(user.getId());
+//            userId=t.getUserId();
+//        }
+//        if(userId!=null && userId.equals(user.getId())){
+//            reportDao.save(t);
+//            //保存SurveyDirectory
+//            if(t.getDirType()==2){
+//                SurveyDetail surveyDetailTemp=t.getSurveyDetail();
+//
+//                SurveyDetail surveyDetail=surveyDetailManager.getBySurveyId(id);
+//                if(surveyDetail!=null){
+//                    if(surveyDetailTemp!=null){
+//                        surveyDetail.setSurveyNote(surveyDetailTemp.getSurveyNote());
+//                    }
+//                }else{
+//                    surveyDetail=new SurveyDetail();
+//                    surveyDetail.setSurveyNote("非常感谢您的参与！如有涉及个人信息，我们将严格保密。");
+//                }
+//                surveyDetail.setDirId(t.getId());
+//                surveyDetailManager.save(surveyDetail);
+//            }
+//        }
     }
 
     @Override
