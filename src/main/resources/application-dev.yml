@@ -58,7 +58,7 @@ spring:
     # 连接账号
     username: root
     # 连接密码
-    password: 123456,.
+    password: 123456
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       initial-size: 5
