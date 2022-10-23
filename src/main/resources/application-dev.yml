@@ -104,7 +104,8 @@ spring:
         format_sql: false
         #事务交由spring管理
         current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
-        #        enable_lazy_load_no_trans: true
+        #配置在没有事务的情况下允许懒加载
+        #enable_lazy_load_no_trans: true
         cache:
           use_second_level_cache: false
           use_query_cache: false

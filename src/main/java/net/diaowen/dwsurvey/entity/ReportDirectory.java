@@ -1,6 +1,8 @@
 package net.diaowen.dwsurvey.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import net.diaowen.common.base.entity.IdEntity;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -8,14 +10,11 @@ import java.util.Date;
 
 /**
  * 报告目录及报告
- * @author keyuan
- *
- * https://github.com/wkeyuan/DWSurvey
- * http://dwsurvey.net
  */
 @Entity
 @Table(name="t_report_directory")
-public class ReportDirectory extends IdEntity{
+@Proxy(lazy=false)
+ public class ReportDirectory extends IdEntity{
 
 	private String reportName;
 	private String reportNameText;
@@ -30,7 +29,16 @@ public class ReportDirectory extends IdEntity{
 	//是否显示  1显示 0不显示
 	private Integer visibility=1;
 	private Integer surveyType;
+	private Integer previewPdfState=0;
 
+
+	public Integer getPreviewPdfState() {
+		return previewPdfState;
+	}
+
+	public void setPreviewPdfState(Integer previewPdfState) {
+		this.previewPdfState = previewPdfState;
+	}
 
 	public String getReportName() {
 		return reportName;

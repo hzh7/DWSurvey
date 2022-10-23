@@ -2,6 +2,7 @@ package net.diaowen.dwsurvey.entity;
 
 import java.util.Date;
 import net.diaowen.common.base.entity.IdEntity;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -11,28 +12,48 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name="t_report_question")
+@Proxy(lazy=false)
 public class ReportQuestion extends IdEntity{
 
 	private String quId;
 	private String reportId;
 	private Date createDate;
-	private long reportQuType;
+	private Integer reportQuType;
 	private long orderById;
-	private long visibility;
+	private Integer visibility;
 	private long agvScoreGrade;
 	private long agvScoreSchool;
 	private long agvScoreAll;
 	private long answerNum;
+	private String quTitle;
+	private String reportQuTitle;
 
 	public ReportQuestion() {
 	}
 
-	public ReportQuestion(String reportId, String quId, long reportQuType, long visibility) {
+	public ReportQuestion(String reportId, String quId, Integer reportQuType, Integer visibility) {
 		this.quId = quId;
 		this.reportId = reportId;
 		this.reportQuType = reportQuType;
 		this.visibility = visibility;
 		this.createDate = new Date();
+	}
+
+
+	public String getQuTitle() {
+		return quTitle;
+	}
+
+	public void setQuTitle(String quTitle) {
+		this.quTitle = quTitle;
+	}
+
+	public String getReportQuTitle() {
+		return reportQuTitle;
+	}
+
+	public void setReportQuTitle(String reportQuTitle) {
+		this.reportQuTitle = reportQuTitle;
 	}
 
 	public String getQuId() {
@@ -62,11 +83,11 @@ public class ReportQuestion extends IdEntity{
 	}
 
 
-	public long getReportQuType() {
+	public Integer getReportQuType() {
 		return reportQuType;
 	}
 
-	public void setReportQuType(long reportQuType) {
+	public void setReportQuType(Integer reportQuType) {
 		this.reportQuType = reportQuType;
 	}
 
@@ -80,11 +101,11 @@ public class ReportQuestion extends IdEntity{
 	}
 
 
-	public long getVisibility() {
+	public Integer getVisibility() {
 		return visibility;
 	}
 
-	public void setVisibility(long visibility) {
+	public void setVisibility(Integer visibility) {
 		this.visibility = visibility;
 	}
 

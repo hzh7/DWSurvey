@@ -14,10 +14,7 @@ import net.diaowen.common.utils.NumberUtils;
 import net.diaowen.dwsurvey.common.AnswerCheckData;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.entity.*;
-import net.diaowen.dwsurvey.service.ReportDirectoryManager;
-import net.diaowen.dwsurvey.service.ReportQuestionManager;
-import net.diaowen.dwsurvey.service.SurveyAnswerManager;
-import net.diaowen.dwsurvey.service.SurveyDirectoryManager;
+import net.diaowen.dwsurvey.service.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -61,6 +58,8 @@ public class ResponseController {
 	@Autowired
 	private ReportQuestionManager reportQuestionManager;
 	@Autowired
+	private QuestionManager questionManager;
+	@Autowired
 	private IPService ipService;
 	@Autowired
 	private AccountManager accountManager;
@@ -94,11 +93,18 @@ public class ResponseController {
 	 */
 	private void parseReportQuestion(HttpServletRequest request, String reportId) {
 		Map<String, Map<String, String>> quChoseMap = buildSaveReportQuMap(request);
+		// 报告中的所有问题
+		List<Question> quIds = questionManager.findByQuIds(quChoseMap.keySet().toArray(new String[0]), false);
 		for (String key : quChoseMap.keySet()) {
 			String chose = quChoseMap.get(key).get("chose");
 			if (chose.equals("y")) {
 				ReportQuestion reportQuestion = new ReportQuestion(reportId, key,
 						Integer.parseInt(quChoseMap.get(key).get("type")), 1);
+				Question targetQu = quIds.stream().filter(x -> x.getId().equals(key)).findFirst().get();
+				if (targetQu != null && targetQu.getQuTitle()!=null) {
+					reportQuestion.setQuTitle(targetQu.getQuTitle());  // 报告题附上问卷原题的标题，减少后续使用查询
+					reportQuestion.setReportQuTitle(targetQu.getQuTitle());
+				}
 				reportQuestionManager.saveBaseUp(reportQuestion);
 			}
 		}

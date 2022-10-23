@@ -25,4 +25,12 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	public List<SurveyDirectory> findByIndex();
 
+	/**
+	 * 生成pdf报告
+	 * @param reportId
+	 * @param itemId
+	 * @return
+	 */
+	public boolean generatePdfReport(String reportId, String itemId) throws Exception;
+
 }
