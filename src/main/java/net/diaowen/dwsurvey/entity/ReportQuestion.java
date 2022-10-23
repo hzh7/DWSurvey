@@ -24,6 +24,16 @@ public class ReportQuestion extends IdEntity{
 	private long agvScoreAll;
 	private long answerNum;
 
+	public ReportQuestion() {
+	}
+
+	public ReportQuestion(String reportId, String quId, long reportQuType, long visibility) {
+		this.quId = quId;
+		this.reportId = reportId;
+		this.reportQuType = reportQuType;
+		this.visibility = visibility;
+		this.createDate = new Date();
+	}
 
 	public String getQuId() {
 		return quId;

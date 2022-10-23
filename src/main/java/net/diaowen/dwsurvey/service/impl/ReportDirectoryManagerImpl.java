@@ -88,6 +88,14 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     }
 
     @Override
+    public ReportDirectory getReport(String id) {
+        if(id==null || "".equals(id)){
+            return new ReportDirectory();
+        }
+        return get(id);
+    }
+
+    @Override
     public ReportDirectory getReportByUser(String id, String userId) {
         return null;
     }
@@ -118,7 +126,7 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     }
 
     @Override
-    public List<SurveyDirectory> findByIndex() {
+    public List<ReportDirectory> findByIndex() {
         return null;
     }
 
