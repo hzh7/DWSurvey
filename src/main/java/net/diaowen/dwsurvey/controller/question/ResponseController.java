@@ -14,6 +14,8 @@ import net.diaowen.common.utils.NumberUtils;
 import net.diaowen.dwsurvey.common.AnswerCheckData;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.entity.*;
+import net.diaowen.dwsurvey.service.ReportDirectoryManager;
+import net.diaowen.dwsurvey.service.ReportQuestionManager;
 import net.diaowen.dwsurvey.service.SurveyAnswerManager;
 import net.diaowen.dwsurvey.service.SurveyDirectoryManager;
 import org.apache.commons.lang.StringUtils;
@@ -55,6 +57,10 @@ public class ResponseController {
 	@Autowired
 	private SurveyDirectoryManager directoryManager;
 	@Autowired
+	private ReportDirectoryManager reportDirectoryManager;
+	@Autowired
+	private ReportQuestionManager reportQuestionManager;
+	@Autowired
 	private IPService ipService;
 	@Autowired
 	private AccountManager accountManager;
@@ -66,6 +72,58 @@ public class ResponseController {
 	@RequestMapping("/save.do")
 	public String save(HttpServletRequest request,HttpServletResponse response,String surveyId) throws Exception {
 		return saveSurvey(request,response,surveyId);
+	}
+	@RequestMapping("/saveReport.do")
+	public String saveReport(HttpServletRequest request,HttpServletResponse response,String reportId) throws Exception {
+		ReportDirectory directory = null;
+		try {
+//			directory = reportDirectoryManager.getReport(reportId);
+//			reportCheckData(request, directory);  fixme
+			parseReportQuestion(request, reportId);
+			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html";  // todo:报告编辑完成后的提示页面
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html?respType="+5+"&reportId="+reportId;
+		}
+	}
+
+	/**
+	 * 处理提交数据的选中的报告题目
+	 * 当chose=y时候表示问卷中的该题被选中需要进入报告
+	 * type表示报告题型：0维度题 or 1量表题
+	 */
+	private void parseReportQuestion(HttpServletRequest request, String reportId) {
+		Map<String, Map<String, String>> quChoseMap = buildSaveReportQuMap(request);
+		for (String key : quChoseMap.keySet()) {
+			String chose = quChoseMap.get(key).get("chose");
+			if (chose.equals("y")) {
+				ReportQuestion reportQuestion = new ReportQuestion(reportId, key,
+						Integer.parseInt(quChoseMap.get(key).get("type")), 1);
+				reportQuestionManager.saveBaseUp(reportQuestion);
+			}
+		}
+	}
+
+	/**
+	 * 问卷的报告选题检查
+	 * todo：姓名身份证等信息必填等
+	 */
+	private void reportCheckData(HttpServletRequest request, ReportDirectory directory) {
+//		AnswerCheckData answerCheckData = new AnswerCheckData();
+//		String surveyId = directory.getId();
+//		SurveyDetail surveyDetail = directory.getSurveyDetail();
+//		Integer answerNum = directory.getAnswerNum();
+//		Integer visibility = directory.getVisibility();
+//
+//		Integer effective = surveyDetail.getEffective();
+//		Integer rule = surveyDetail.getRule();
+//		Integer refresh = surveyDetail.getRefresh();
+//		Integer refreshNum = surveyDetail.getRefreshNum();
+//		Integer ynEndNum = surveyDetail.getYnEndNum();
+//		Integer endNum = surveyDetail.getEndNum();
+//		Integer ynEndTime = surveyDetail.getYnEndTime();
+//		Date endTime = surveyDetail.getEndTime();
+
 	}
 
 	@RequestMapping("/saveMobile.do")
@@ -273,6 +331,39 @@ public class ResponseController {
 		String surveyLogId = request.getParameter("surveyLogId");
 //		surveyAnswerLogManager.upSurveyLogAnswerId(surveyLogId, answerId);
 
+	}
+	public Map<String, Map<String, String>> buildSaveReportQuMap(HttpServletRequest request) {
+		// {quId:{chose:y,type:1}}
+		Map<String, Map<String, String>> quMaps = new HashMap<String, Map<String, String>>();
+		Map<String, Object> choseMaps = WebUtils.getParametersStartingWith(
+				request, "chose_qu_");
+		Map<String, Object> typeMaps = WebUtils.getParametersStartingWith(
+				request, "type_qu_");
+
+		for (String key : choseMaps.keySet()) {
+			String quId = key.split("_")[1];
+			String chose = choseMaps.get(key).toString();
+			if (quMaps.containsKey(quId)){
+				quMaps.get(quId).put("chose", chose);
+			} else {
+				HashMap<String, String> stringStringHashMap = new HashMap<>();
+				stringStringHashMap.put("chose", chose);
+				quMaps.put(quId, stringStringHashMap);
+			}
+		}
+		for (String key : typeMaps.keySet()) {
+			String quId = key.split("_")[1];
+			String type = typeMaps.get(key).toString();
+			if (quMaps.containsKey(quId)){
+				quMaps.get(quId).put("type", type);
+			} else {
+				HashMap<String, String> stringStringHashMap = new HashMap<>();
+				stringStringHashMap.put("type", type);
+				quMaps.put(quId, stringStringHashMap);
+			}
+		}
+		System.out.println(quMaps);
+		return quMaps;
 	}
 
 	public Map<String, Map<String, Object>> buildSaveSurveyMap(HttpServletRequest request) {

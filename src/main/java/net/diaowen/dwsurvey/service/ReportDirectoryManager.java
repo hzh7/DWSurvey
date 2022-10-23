@@ -14,6 +14,7 @@ import java.util.List;
 public interface ReportDirectoryManager extends BaseService<ReportDirectory, String>{
 
 	public ReportDirectory findUniqueBy(String id);
+	public ReportDirectory getReport(String id);
 
 	public ReportDirectory getReportByUser(String id, String userId);
 
@@ -23,7 +24,7 @@ public interface ReportDirectoryManager extends BaseService<ReportDirectory, Str
 
 	public Page<ReportDirectory> findByUser(Page<ReportDirectory> page, String reportName);
 
-	public List<SurveyDirectory> findByIndex();
+	public List<ReportDirectory> findByIndex();
 
 	public void saveBaseUp(ReportDirectory t);
 
