@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface ReportQuestionManager extends BaseService<ReportQuestion, String>{
 
-	public ReportQuestion findUniqueBy(String id);
+	public ReportQuestion findUnique(ReportQuestion t);
 
 	public Page<ReportQuestion> findByUser(Page<ReportQuestion> page, String reportName);
 

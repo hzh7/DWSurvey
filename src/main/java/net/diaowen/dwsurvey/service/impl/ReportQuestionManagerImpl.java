@@ -32,11 +32,20 @@ public class ReportQuestionManagerImpl extends BaseServiceImpl<ReportQuestion, S
     }
 
     @Override
-    public ReportQuestion findUniqueBy(String id) {
-        if(id==null || "".equals(id)){
+    public ReportQuestion findUnique(ReportQuestion t) {
+        if (t == null) {
             return new ReportQuestion();
         }
-        return reportQuestionDao.findUniqueBy("id",id);
+        if(t.getId()!=null){
+            return reportQuestionDao.findUniqueBy("id",t.getId());
+        }
+        if (t.getReportId() != null && t.getQuId() != null) {
+            return reportQuestionDao.findUnique(
+                    Restrictions.eq("reportId", t.getReportId()),
+                    Restrictions.eq("quId", t.getQuId())
+            );
+        }
+        return null;
     }
 
     @Override
@@ -60,12 +69,14 @@ public class ReportQuestionManagerImpl extends BaseServiceImpl<ReportQuestion, S
     @Override
     public void saveBaseUp(ReportQuestion t) {
         //判断有无，有则更新，无则新建
-        ReportQuestion reportQuestion = findUniqueBy(t.getId());
+        ReportQuestion reportQuestion = findUnique(t);
         if(reportQuestion != null){
             reportQuestion.setReportId(t.getReportId());
             reportQuestion.setReportQuType(t.getReportQuType());
             reportQuestion.setQuId(t.getQuId());
             reportQuestion.setVisibility(t.getVisibility());
+            reportQuestion.setQuTitle(t.getQuTitle());
+            reportQuestion.setReportQuTitle(t.getReportQuTitle());
             super.save(reportQuestion);
         }
         else {
