@@ -18,6 +18,7 @@ public interface ReportQuestionManager extends BaseService<ReportQuestion, Strin
 	public Page<ReportQuestion> findByUser(Page<ReportQuestion> page, String reportName);
 
 	public List<ReportQuestion> findByIndex();
+	public List<ReportQuestion> findByReportId( String reportId);
 
 	public void saveBaseUp(ReportQuestion t);
 

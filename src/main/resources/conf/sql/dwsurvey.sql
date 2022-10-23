@@ -814,3 +814,89 @@ CREATE TABLE `tracker` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+
+
+
+-- ----------------------------
+--  Table structure for `t_report_directory`
+-- ----------------------------
+DROP TABLE IF EXISTS `t_report_directory`;
+CREATE TABLE `t_report_directory` (
+    `id` varchar(55) NOT NULL,
+    `report_name` varchar(255) DEFAULT NULL COMMENT '报告名称',
+    `report_name_text` varchar(255) DEFAULT NULL COMMENT '报告描述',
+    `survey_id` varchar(55) NOT NULL COMMENT '问卷id',
+    `user_id` varchar(55) DEFAULT NULL COMMENT '创建报告的用户',
+    `report_template_id` varchar(55) DEFAULT NULL COMMENT '报告的模板id',  --（暂未支持）
+    `file_data_id` varchar(55) DEFAULT NULL COMMENT '文件id',  --（暂未支持，表示报告内容可关联用户上传的表，如线下测试成绩）
+    `report_num` int(11) DEFAULT NULL COMMENT '报告数量',
+    `create_date` datetime DEFAULT NULL,
+    `report_qu_num` int(11) DEFAULT NULL COMMENT '报告里选中的问卷问题数量',
+    `report_state` int(11) DEFAULT NULL COMMENT '报告状态：首次创建初始化0；例行更新1',
+    `visibility` int(11) DEFAULT NULL,
+    `survey_type` int(11) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+
+
+-- ----------------------------
+--  Table structure for `t_report_question`
+-- ----------------------------
+DROP TABLE IF EXISTS `t_report_question`;
+CREATE TABLE `t_report_question` (
+    `id` varchar(55) NOT NULL,
+    `qu_id` varchar(55) NOT NULL COMMENT '对应问题id',
+    `report_id` varchar(55) NOT NULL COMMENT '所属报告id',
+    `create_date` datetime DEFAULT NULL,
+    `report_qu_type` int(11) DEFAULT NULL COMMENT '题目类型：维度题、量表题',
+    `order_by_id` int(11) DEFAULT NULL COMMENT '排序ID',
+    `visibility` int(11) DEFAULT NULL,
+    `agv_score_grade` int(11) DEFAULT NULL COMMENT '该题年级均分',
+    `agv_score_school` int(11) DEFAULT NULL COMMENT '该题全校均分',
+    `agv_score_all` int(11) DEFAULT NULL COMMENT '该题全体均分',
+    `answer_num` int(11) DEFAULT NULL COMMENT '回答该题的数量',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+
+-- ----------------------------
+--  Table structure for `t_an_answer_report`
+--  报告选中题目的答案所对应的报告小结，用于生成报告
+-- ----------------------------
+DROP TABLE IF EXISTS `t_an_answer_report`;
+CREATE TABLE `t_an_answer_report` (
+    `id` varchar(55) NOT NULL,
+    `report_item_id` varchar(255) DEFAULT NULL COMMENT '所属具体报告id',
+    `answer_id` varchar(255) DEFAULT NULL COMMENT '答案id',
+    `create_date` datetime DEFAULT NULL,
+    `visibility` int(11) DEFAULT NULL,
+    `sum_score` int(11) DEFAULT NULL COMMENT '量表题生效：该大题得分汇总',
+    `score_percentile` float DEFAULT NULL COMMENT '量表题生效：该大题得分百位位',
+    PRIMARY KEY (`id`),
+    KEY `exportIndex` (`report_item_id`,`answer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+
+-- ----------------------------
+--  Table structure for `t_report_item`
+--  一份具体的报告
+-- ----------------------------
+DROP TABLE IF EXISTS `t_report_item`;
+CREATE TABLE `t_report_item` (
+    `id` varchar(55) NOT NULL,
+    `sid` varchar(255) DEFAULT NULL COMMENT '报告短id',
+    `survey_answer_id` varchar(55) NOT NULL COMMENT '对应问卷答卷id',
+    `report_id` varchar(55) NOT NULL COMMENT '所属的报告id',
+    `pdf_addr` varchar(255) DEFAULT NULL,
+    `create_date` datetime DEFAULT NULL,
+    `user_id` varchar(100) DEFAULT NULL,
+    `generate_status` varchar(100) DEFAULT NULL COMMENT '报告状态：生成中，生成完成，生成失败',
+    `generate_msg` varchar(100) DEFAULT NULL COMMENT '报告生成消息',
+    PRIMARY KEY (`id`),
+    KEY `user_id_index` (`user_id`),
+    KEY `report_id_index` (`report_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+

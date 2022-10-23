@@ -11,13 +11,13 @@ import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.SurveyDetail;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
 import net.diaowen.dwsurvey.service.*;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -29,6 +29,8 @@ public class MyReportController {
     private AccountManager accountManager;
     @Autowired
     private ReportDirectoryManager reportDirectoryManager;
+    @Autowired
+    private ReportItemManager reportItemManager;
 //    @Autowired
 //    private SurveyAnswerManager surveyAnswerManager;
 //    @Autowired
@@ -123,38 +125,48 @@ public class MyReportController {
         return HttpResult.FAILURE(result);
     }
 
-
-//    /**
-//     * 修改状态
-//     * @return
-//     */
-//    @RequestMapping(value = "/up-survey-status.do",method = RequestMethod.POST)
-//    @ResponseBody
-//    public HttpResult<SurveyDirectory> upSurveyState(String surveyId, Integer surveyState) {
-//        try{
-//            reportDirectoryManager.upSurveyState(surveyId,surveyState);
-//            return HttpResult.SUCCESS();
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//        return HttpResult.FAILURE();
-//    }
-
-
     /**
-     * 保存更新基本属性
+     * 报告的状态
+     * @param reportId
+     * @param itemId
+     * @return
      */
-    @RequestMapping(value = "/survey-base-attr.do",method = RequestMethod.PUT)
+    @RequestMapping(value = "/state.do",method = RequestMethod.GET)
     @ResponseBody
-    public HttpResult<SurveyDirectory> saveBaseAttr(@RequestBody ReportDirectory reportDirectory) {
-        try{
-            reportDirectoryManager.saveBaseUp(reportDirectory);
+    public HttpResult reportItemState(String reportId, String itemId){
+        // 无 itemId， 针对报告设计完成后进行报告展示内容的预览
+        if (itemId == null || itemId.equals("") || itemId.equals("0")) {
+            ReportDirectory report = reportDirectoryManager.getReport(reportId);
+            if (report == null || report.getId() == null) {
+                return HttpResult.FAILURE("报告不存在");
+            }
+            if (report.getPreviewPdfState() == null || report.getPreviewPdfState() != 1) {  // fixme 魔法值
+                try {
+                    reportItemManager.generatePdfReport(reportId, itemId);
+                } catch (Exception e) {
+                    return HttpResult.SUCCESS("failed: " + e.getMessage());
+                }
+            }
             return HttpResult.SUCCESS();
-        }catch (Exception e){
-            e.printStackTrace();
         }
-        return HttpResult.FAILURE();
+        // 具体的一份 报告 todo
+        return HttpResult.SUCCESS("failed: 报告尚未生成");
     }
 
-
+    @RequestMapping("/readPdf")
+    private void readPdf(HttpServletResponse response, String reportId, String itemId) {
+        response.reset();
+        response.setContentType("application/pdf");
+        try {
+            File file = new File("C:\\Users\\iHaozz\\Desktop\\思维与策略量表\\220805报告模板.pdf");
+            FileInputStream fileInputStream = new FileInputStream(file);
+            OutputStream outputStream = response.getOutputStream();
+            IOUtils.write(IOUtils.toByteArray(fileInputStream), outputStream);
+            response.setHeader("Content-Disposition",
+                    "inline; filename= file");
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

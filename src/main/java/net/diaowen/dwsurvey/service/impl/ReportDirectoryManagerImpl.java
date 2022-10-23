@@ -24,11 +24,12 @@ import java.util.List;
 @Service("reportDirectoryManager")
 public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory, String> implements ReportDirectoryManager {
     @Autowired
-    private AccountManager accountManager;
-    @Autowired
     private ReportDirectoryDao reportDirectoryDao;
+    @Autowired
+    private AccountManager accountManager;
     @Override
     public void setBaseDao() {
+        this.baseDao = reportDirectoryDao;
     }
 
     @Transactional
@@ -47,46 +48,7 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         }
     }
 
-    @Override
-    public void delete(ReportDirectory report) {
-
-    }
-
-    @Override
-    public void delete(String s) {
-
-    }
-
-    @Override
-    public ReportDirectory get(String s) {
-        return null;
-    }
-
-    @Override
-    public ReportDirectory getModel(String s) {
-        return null;
-    }
-
-    @Override
-    public ReportDirectory findById(String s) {
-        return null;
-    }
-
-    @Override
-    public List<ReportDirectory> findList(Criterion... criterions) {
-        return null;
-    }
-
-    @Override
-    public Page<ReportDirectory> findPage(Page<ReportDirectory> page, Criterion... criterion) {
-        return null;
-    }
-
-    @Override
-    public ReportDirectory findUniqueBy(String id) {
-        return null;
-    }
-
+    @Transactional
     @Override
     public ReportDirectory getReport(String id) {
         if(id==null || "".equals(id)){
@@ -95,17 +57,8 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         return get(id);
     }
 
-    @Override
-    public ReportDirectory getReportByUser(String id, String userId) {
-        return null;
-    }
 
-    @Override
-    public void saveReport(ReportDirectory entity) {
-
-    }
-
-    @Override
+//    @Override
     public Page<ReportDirectory> findPage(Page<ReportDirectory> page, String surveyName, Integer surveyState) {
         return null;
     }
@@ -125,10 +78,6 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         return page;
     }
 
-    @Override
-    public List<ReportDirectory> findByIndex() {
-        return null;
-    }
 
     @Transactional
     @Override
