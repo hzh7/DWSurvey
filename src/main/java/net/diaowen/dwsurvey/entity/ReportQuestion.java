@@ -19,16 +19,17 @@ public class ReportQuestion extends IdEntity{
 	private String reportId;
 	private Date createDate;
 	private Integer reportQuType;
-	private long orderById;
+	private Integer orderById;
 	private Integer visibility;
-	private long agvScoreGrade;
-	private long agvScoreSchool;
-	private long agvScoreAll;
-	private long answerNum;
+//	private Float agvScoreGrade;
+//	private Float agvScoreSchool;
+//	private Float agvScoreAll;
+	private Float answerNum;
 	private String quTitle;
 	private String reportQuTitle;
 
 	public ReportQuestion() {
+		this.setCreateDate(new Date());
 	}
 
 	public ReportQuestion(String reportId, String quId, Integer reportQuType, Integer visibility) {
@@ -92,11 +93,11 @@ public class ReportQuestion extends IdEntity{
 	}
 
 
-	public long getOrderById() {
+	public Integer getOrderById() {
 		return orderById;
 	}
 
-	public void setOrderById(long orderById) {
+	public void setOrderById(Integer orderById) {
 		this.orderById = orderById;
 	}
 
@@ -110,38 +111,11 @@ public class ReportQuestion extends IdEntity{
 	}
 
 
-	public long getAgvScoreGrade() {
-		return agvScoreGrade;
-	}
-
-	public void setAgvScoreGrade(long agvScoreGrade) {
-		this.agvScoreGrade = agvScoreGrade;
-	}
-
-
-	public long getAgvScoreSchool() {
-		return agvScoreSchool;
-	}
-
-	public void setAgvScoreSchool(long agvScoreSchool) {
-		this.agvScoreSchool = agvScoreSchool;
-	}
-
-
-	public long getAgvScoreAll() {
-		return agvScoreAll;
-	}
-
-	public void setAgvScoreAll(long agvScoreAll) {
-		this.agvScoreAll = agvScoreAll;
-	}
-
-
-	public long getAnswerNum() {
+	public Float getAnswerNum() {
 		return answerNum;
 	}
 
-	public void setAnswerNum(long answerNum) {
+	public void setAnswerNum(Float answerNum) {
 		this.answerNum = answerNum;
 	}
 

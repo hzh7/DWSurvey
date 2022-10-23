@@ -16,9 +16,7 @@ import org.hibernate.criterion.Criterion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -81,16 +79,68 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return false;
     }
 
+    /**
+     * 生成配置的报告的预览pdf
+     * 需要构造数据，形如：
+     *  {
+     *   "reportId": "111",  设计的报告id
+     *   "surveyId": "222",  问卷id
+     *   "reportItemId": "333",  具体一份报告的id
+     *   "statistics": {
+     *         "grade_range_uv": 123,  # 同学段人数（初中）
+     *         "same_grade_uv": 123,  # 同年级人数
+     *         "school_num": 123,  # 学校数量
+     *         "same_school_uv": 123,  # 同学校人数
+     *         "same_school_grade_uv": 123  # 同学校同年级人数
+     *     },,
+     *   "dim": [
+     *     {
+     *       "key": "姓名",
+     *       "value": "xxx"
+     *     },
+     *     {
+     *       "key": "年级",
+     *       "value": "xxx"
+     *     },
+     *     {
+     *       "key": "在班级中的排名",
+     *       "value": "xxx"
+     *     }
+     *   ],
+     *   "metric": [
+     *     {
+     *       "key": "学习迁移",
+     *       "score": 2.9,
+     *       "agv_score_grade": 2.9,
+     *       "agv_score_school": 2.4,
+     *       "agv_score_all": 2.2,
+     *       "percentile": 79
+     *     },
+     *     {
+     *       "key": "学习情感",
+     *       "score": 2.9,
+     *       "agv_score_grade": 2.9,
+     *       "agv_score_school": 2.4,
+     *       "agv_score_all": 2.2,
+     *       "percentile": 79
+     *     }
+     *   ]
+     * }
+     */
     private boolean generatePreviewPdfReport(String reportId) {
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
         // 报告中选中的题目
         List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
         System.out.println(reportQuestions);
 
-        // 报告维度
-        HashMap<String, String> dimMap = new HashMap<>();
-        // 报告量表
-        HashMap<String, String> metricMap = new HashMap<>();
+        HashMap<String, Object> reportData = new HashMap<>();
+        reportData.put("reportId", reportId);
+        reportData.put("surveyId", report.getSurveyId());
+        reportData.put("reportItemId", null);
+
+        // 报告量表、维度
+        ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
+        ArrayList<Map<String, Object>> metricMap = new ArrayList<>();
         // 选中题目的报告中题型：维度or量表
 //        HashMap<String, Integer> quTypeMap = new HashMap<>();
 //        reportQuestions.forEach(x -> quTypeMap.put(x.getId(), x.getReportQuType()));
@@ -105,17 +155,37 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 //                .forEach(x -> metricMap.put(x, "xxx"));  // 题目：xxx
 
         reportQuestions.stream().filter(x -> x.getReportQuType().equals(0))
-                .map(x -> matcherText(x.getQuTitle()))
-                .forEach(x -> dimMap.put(x, "xxx"));  // 题目：内容，如 姓名：张三
+                .forEach(x -> {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("key", matcherText(x.getQuTitle()));
+                    map.put("value", "xxx");
+                    dimMap.add(map);
+                });
         reportQuestions.stream().filter(x -> x.getReportQuType().equals(1))
-                .map(x -> matcherText(x.getQuTitle()))
-                .forEach(x -> metricMap.put(x, String.format("%.1f", (float) (Math.random() * 5))));  // 题目：得分，如 学习迁移：4.5
-        System.out.println(dimMap);
-        System.out.println(metricMap);
+                .forEach(x -> metricMap.add(buildMetric(x)));
+        reportData.put("dim",dimMap);
+        reportData.put("metric", metricMap);
+        System.out.println(reportData);
         return false;
     }
 
-    private String matcherText(String s) {
+    private HashMap<String, Object> buildMetric(ReportQuestion reportQuestion){
+        HashMap<String, Object> scoreMap =new HashMap<>();
+        scoreMap.put("key", reportQuestion.getReportQuTitle());
+        // 该题得分
+        scoreMap.put("score", String.format("%.1f", (float) (Math.random() * 5)));
+        // 该题年级均分
+        scoreMap.put("agv_score_grade", String.format("%.1f", (float) (Math.random() * 5)));
+        // 该题全校均分
+        scoreMap.put("agv_score_school", String.format("%.1f", (float) (Math.random() * 5)));
+        // 该题全体均分
+        scoreMap.put("agv_score_all", String.format("%.1f", (float) (Math.random() * 5)));
+        // 百分位数
+        scoreMap.put("percentile", String.format("%.1f", (float) (Math.random() * 100)));
+        return scoreMap;
+    }
+
+    public static String matcherText(String s) {
         if (s == null) {
             return "";
         }

@@ -37,6 +37,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
+
 /**
  * 答卷 action
  * @author KeYuan(keyuan258@gmail.com)
@@ -102,8 +104,8 @@ public class ResponseController {
 						Integer.parseInt(quChoseMap.get(key).get("type")), 1);
 				Question targetQu = quIds.stream().filter(x -> x.getId().equals(key)).findFirst().get();
 				if (targetQu != null && targetQu.getQuTitle()!=null) {
-					reportQuestion.setQuTitle(targetQu.getQuTitle());  // 报告题附上问卷原题的标题，减少后续使用查询
-					reportQuestion.setReportQuTitle(targetQu.getQuTitle());
+					reportQuestion.setQuTitle(matcherText(targetQu.getQuTitle()));  // 报告题附上问卷原题的标题，减少后续使用查询
+					reportQuestion.setReportQuTitle(matcherText(targetQu.getQuTitle()));
 				}
 				reportQuestionManager.saveBaseUp(reportQuestion);
 			}
