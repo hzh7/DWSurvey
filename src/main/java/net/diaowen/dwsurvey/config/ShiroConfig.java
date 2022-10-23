@@ -79,7 +79,7 @@ public class ShiroConfig {
         Map<String, String> map = new LinkedHashMap<>();
         //登出
         map.put("/logout", "logout");
-        //对所有用户认证  fixme
+        //对所有用户认证
         map.put("/login", "authc");
         map.put("/ic/**", "user");
         map.put("/design/**", "user");

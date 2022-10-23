@@ -7,12 +7,10 @@ import net.diaowen.common.plugs.httpclient.HttpStatus;
 import net.diaowen.common.plugs.httpclient.PageResult;
 import net.diaowen.common.plugs.httpclient.ResultUtils;
 import net.diaowen.common.plugs.page.Page;
+import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.SurveyDetail;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
-import net.diaowen.dwsurvey.service.SurveyAnswerManager;
-import net.diaowen.dwsurvey.service.SurveyDetailManager;
-import net.diaowen.dwsurvey.service.SurveyDirectoryManager;
-import net.diaowen.dwsurvey.service.SurveyStatsManager;
+import net.diaowen.dwsurvey.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.Arrays;
 import java.util.Map;
 
 @Controller
@@ -29,13 +28,11 @@ public class MyReportController {
     @Autowired
     private AccountManager accountManager;
     @Autowired
-    private SurveyDirectoryManager surveyDirectoryManager;
-    @Autowired
-    private SurveyDetailManager surveyDetailManager;
-    @Autowired
-    private SurveyAnswerManager surveyAnswerManager;
-    @Autowired
-    private SurveyStatsManager surveyStatsManager;
+    private ReportDirectoryManager reportDirectoryManager;
+//    @Autowired
+//    private SurveyAnswerManager surveyAnswerManager;
+//    @Autowired
+//    private SurveyStatsManager surveyStatsManager;
 
     /**
      * 拉取问卷列表
@@ -44,14 +41,13 @@ public class MyReportController {
      */
     @RequestMapping(value = "/list.do",method = RequestMethod.GET)
     @ResponseBody
-    public PageResult<SurveyDirectory> list(PageResult<SurveyDirectory> pageResult, String surveyName, Integer surveyState) {
+    public PageResult<ReportDirectory> list(PageResult<ReportDirectory> pageResult, String reportName) {
 
         User user = accountManager.getCurUser();
         if(user!=null){
             Page page = ResultUtils.getPageByPageResult(pageResult);
-            page = surveyDirectoryManager.findByUser(page,surveyName, surveyState);
-            page.setResult(surveyAnswerManager.upAnQuNum(page.getResult()));
-            pageResult = ResultUtils.getPageResultByPage(page,pageResult);
+            page = reportDirectoryManager.findByUser(page, reportName);
+            pageResult = ResultUtils.getPageResultByPage(page, pageResult);
         }
         return pageResult;
     }
@@ -62,55 +58,39 @@ public class MyReportController {
      * @param id
      * @return
      */
-    @RequestMapping(value = "/info.do",method = RequestMethod.GET)
-    @ResponseBody
-    public HttpResult<SurveyDirectory> info(String id) {
-        try{
+//    @RequestMapping(value = "/info.do",method = RequestMethod.GET)
+//    @ResponseBody
+//    public HttpResult<SurveyDirectory> info(String id) {
+//        try{
 //            User user = accountManager.getCurUser();
-            User user = new User();
-            if(user!=null){
-                surveyStatsManager.findBySurvey(id);
-                SurveyDirectory survey = surveyDirectoryManager.findUniqueBy(id);
-                survey = surveyAnswerManager.upAnQuNum(survey);
-                return HttpResult.SUCCESS(survey);
-            }else{
-                return HttpResult.buildResult(HttpStatus.NOLOGIN);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return HttpResult.FAILURE();
-    }
+//            if(user!=null){
+//                surveyStatsManager.findBySurvey(id);
+//                SurveyDirectory survey = surveyDirectoryManager.findUniqueBy(id);
+//                survey = surveyAnswerManager.upAnQuNum(survey);
+//                return HttpResult.SUCCESS(survey);
+//            }else{
+//                return HttpResult.buildResult(HttpStatus.NOLOGIN);
+//            }
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
+//        return HttpResult.FAILURE();
+//    }
 
     /**
-     * 创建新问卷
-     * @param surveyDirectory
-     * @return
+     * 创建新报告
      */
     @RequestMapping(value = "/add.do",method = RequestMethod.POST)
     @ResponseBody
-    // @RequiresRoles(value = "PROJECT_ADMIN,DEPT_ADMIN,ENT_ADMIN,SUPER_ADMIN,QT_SURVEY_LIST")
-    public HttpResult add(@RequestBody SurveyDirectory surveyDirectory) {
+    public HttpResult add(@RequestBody ReportDirectory reportDirectory) {
         try{
-            surveyDirectory.setDirType(2);
-            surveyDirectory.setSurveyNameText(surveyDirectory.getSurveyName());
-            surveyDirectoryManager.save(surveyDirectory);
-            return HttpResult.SUCCESS(surveyDirectory);
+            reportDirectory.setReportNameText(reportDirectory.getReportName());
+            reportDirectoryManager.save(reportDirectory);
+            return HttpResult.SUCCESS(reportDirectory);
         }catch (Exception e){
             e.printStackTrace();
         }
         return HttpResult.FAILURE();
-    }
-
-
-    //引用问卷
-    @RequestMapping(value = "/copy.do",method = RequestMethod.POST)
-    @ResponseBody
-    public HttpResult copy(String fromSurveyId, String surveyName, String tag) throws Exception {
-        tag="2";
-        SurveyDirectory directory=surveyDirectoryManager.createBySurvey(fromSurveyId,surveyName,tag);
-        String surveyId=directory.getId();
-        return HttpResult.SUCCESS(directory);
     }
 
 
@@ -131,7 +111,7 @@ public class MyReportController {
                     if(map.containsKey("id")){
                         String[] ids = map.get("id");
                         if(ids!=null){
-                            surveyDirectoryManager.delete(ids);
+                            reportDirectoryManager.delete(Arrays.toString(ids));
                             return HttpResult.SUCCESS();
                         }
                     }
@@ -144,33 +124,31 @@ public class MyReportController {
     }
 
 
-    /**
-     * 修改状态
-     * @return
-     */
-    @RequestMapping(value = "/up-survey-status.do",method = RequestMethod.POST)
-    @ResponseBody
-    public HttpResult<SurveyDirectory> upSurveyState(String surveyId, Integer surveyState) {
-        try{
-            surveyDirectoryManager.upSurveyState(surveyId,surveyState);
-            return HttpResult.SUCCESS();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return HttpResult.FAILURE();
-    }
+//    /**
+//     * 修改状态
+//     * @return
+//     */
+//    @RequestMapping(value = "/up-survey-status.do",method = RequestMethod.POST)
+//    @ResponseBody
+//    public HttpResult<SurveyDirectory> upSurveyState(String surveyId, Integer surveyState) {
+//        try{
+//            reportDirectoryManager.upSurveyState(surveyId,surveyState);
+//            return HttpResult.SUCCESS();
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
+//        return HttpResult.FAILURE();
+//    }
 
 
     /**
      * 保存更新基本属性
-     * @param surveyDetail
-     * @return
      */
     @RequestMapping(value = "/survey-base-attr.do",method = RequestMethod.PUT)
     @ResponseBody
-    public HttpResult<SurveyDirectory> saveBaseAttr(@RequestBody SurveyDetail surveyDetail) {
+    public HttpResult<SurveyDirectory> saveBaseAttr(@RequestBody ReportDirectory reportDirectory) {
         try{
-            surveyDetailManager.saveBaseUp(surveyDetail);
+            reportDirectoryManager.saveBaseUp(reportDirectory);
             return HttpResult.SUCCESS();
         }catch (Exception e){
             e.printStackTrace();

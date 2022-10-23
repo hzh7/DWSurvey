@@ -7,12 +7,10 @@ import net.diaowen.common.plugs.httpclient.HttpStatus;
 import net.diaowen.common.plugs.httpclient.PageResult;
 import net.diaowen.common.plugs.httpclient.ResultUtils;
 import net.diaowen.common.plugs.page.Page;
+import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.SurveyDetail;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
-import net.diaowen.dwsurvey.service.SurveyAnswerManager;
-import net.diaowen.dwsurvey.service.SurveyDetailManager;
-import net.diaowen.dwsurvey.service.SurveyDirectoryManager;
-import net.diaowen.dwsurvey.service.SurveyStatsManager;
+import net.diaowen.dwsurvey.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,6 +50,7 @@ public class MySurveyController {
         if(user!=null){
             Page page = ResultUtils.getPageByPageResult(pageResult);
             page = surveyDirectoryManager.findByUser(page,surveyName, surveyState);
+            // 更新回答次数
             page.setResult(surveyAnswerManager.upAnQuNum(page.getResult()));
             pageResult = ResultUtils.getPageResultByPage(page,pageResult);
         }
@@ -164,8 +163,6 @@ public class MySurveyController {
 
     /**
      * 保存更新基本属性
-     * @param surveyDetail
-     * @return
      */
     @RequestMapping(value = "/survey-base-attr.do",method = RequestMethod.PUT)
     @ResponseBody
