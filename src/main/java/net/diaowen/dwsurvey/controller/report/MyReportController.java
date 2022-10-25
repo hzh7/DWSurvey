@@ -2,16 +2,17 @@ package net.diaowen.dwsurvey.controller.report;
 
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
+import net.diaowen.common.dao.BaseHttpDao;
 import net.diaowen.common.plugs.httpclient.HttpResult;
 import net.diaowen.common.plugs.httpclient.HttpStatus;
 import net.diaowen.common.plugs.httpclient.PageResult;
 import net.diaowen.common.plugs.httpclient.ResultUtils;
 import net.diaowen.common.plugs.page.Page;
-import net.diaowen.dwsurvey.entity.ReportDirectory;
-import net.diaowen.dwsurvey.entity.SurveyDetail;
-import net.diaowen.dwsurvey.entity.SurveyDirectory;
+import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +21,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/api/dwsurvey/app/report")
 public class MyReportController {
+    private static final Logger logger = LogManager.getLogger(MyReportController.class.getName());
 
     @Autowired
     private AccountManager accountManager;
@@ -31,6 +34,8 @@ public class MyReportController {
     private ReportDirectoryManager reportDirectoryManager;
     @Autowired
     private ReportItemManager reportItemManager;
+    @Autowired
+    private SurveyAnswerManager surveyAnswerManager;
 //    @Autowired
 //    private SurveyAnswerManager surveyAnswerManager;
 //    @Autowired
@@ -135,22 +140,50 @@ public class MyReportController {
     @ResponseBody
     public HttpResult reportItemState(String reportId, String itemId){
         // 无 itemId， 针对报告设计完成后进行报告展示内容的预览
-        if (itemId == null || itemId.equals("") || itemId.equals("0")) {
-            ReportDirectory report = reportDirectoryManager.getReport(reportId);
-            if (report == null || report.getId() == null) {
-                return HttpResult.FAILURE("报告不存在");
-            }
-            if (report.getPreviewPdfState() == null || report.getPreviewPdfState() != 1) {  // fixme 魔法值
-                try {
-                    reportItemManager.generatePdfReport(reportId, itemId);
-                } catch (Exception e) {
-                    return HttpResult.SUCCESS("failed: " + e.getMessage());
-                }
-            }
-            return HttpResult.SUCCESS();
+        if (itemId == null || itemId.equals("") || itemId.equals("0") ||
+                reportId == null || reportId.equals("") || reportId.equals("0")) {
+            return HttpResult.FAILURE("报告不存在");
         }
-        // 具体的一份 报告 todo
-        return HttpResult.SUCCESS("failed: 报告尚未生成");
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        if (report == null || report.getId() == null) {
+            return HttpResult.FAILURE("报告不存在");
+        }
+        ReportItem reportItem = reportItemManager.get(itemId);
+        if (reportItem == null || reportItem.getGenerateStatus() == null) {
+            return HttpResult.FAILURE("failed: 报告不存在");
+        }
+        return HttpResult.SUCCESS(reportItem.getGenerateStatus());
+    }
+
+    /**
+     * 生成一份答卷的具体报告
+     * @param reportId 报告id
+     * @param surveyAnswerId 相应的问卷答案id
+     */
+    @RequestMapping(value = "/generate.do",method = RequestMethod.GET)
+    @ResponseBody
+    public HttpResult generateReportItem(String reportId, String surveyAnswerId){
+        // 无具体的surveyAnswerId， 针对报告设计完成后进行报告展示内容的预览
+        if (surveyAnswerId == null || surveyAnswerId.equals("")) {
+            try {
+                reportItemManager.generatePreviewPdfReport(reportId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return HttpResult.FAILURE(e.getMessage());
+            }
+        }
+        // 生成报告
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+        if (!Objects.equals(report.getSurveyId(), surveyAnswer.getSurveyId())) {
+            return HttpResult.FAILURE("答卷与报告配置不匹配");
+        }
+        try {
+            reportItemManager.generatePdfReport(reportId, surveyAnswerId);
+        } catch (Exception e) {
+            return HttpResult.SUCCESS("failed: " + e.getMessage());
+        }
+        return HttpResult.SUCCESS();
     }
 
     @RequestMapping("/readPdf")

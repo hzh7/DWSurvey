@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.service.impl;
 
+import net.diaowen.dwsurvey.entity.ReportItem;
 import net.diaowen.dwsurvey.service.ReportItemManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ class ReportItemManagerImplTest {
 
     @Test
     void generatePdfReport() throws Exception {
-        boolean b = reportItemManager.generatePdfReport("984539ed-e06d-4cc6-8396-3eda62ae1d1b", "");
+        ReportItem b = reportItemManager.generatePdfReport("984539ed-e06d-4cc6-8396-3eda62ae1d1b", "");
         System.out.println(b);
     }
 
@@ -38,5 +39,10 @@ class ReportItemManagerImplTest {
         System.out.println(Arrays.toString(split));
         System.out.println(split[split.length - 1]);
 
+    }
+
+    @Test
+    void getSameAnswerInSurveyQu() {
+        reportItemManager.getSameAnswerInSurveyQu("2fb7e1a7-faf3-48ce-bd17-0f96e62fd168", "37fd7a6e-15b1-4927-a8bb-4501182a58e4", "三年级");
     }
 }

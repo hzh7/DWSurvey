@@ -30,15 +30,15 @@ public class AnAnswerManagerImpl extends BaseServiceImpl<AnAnswer, String> imple
 	
 	
 	//根据exam_user信息查询答案
-		public AnAnswer findAnswer(String belongAnswerId,String quId){
-			Criterion criterion1=Restrictions.eq("belongAnswerId", belongAnswerId);
-			Criterion criterion2=Restrictions.eq("quId", quId);
-			return anAnswerDao.findUnique(criterion1,criterion2);
-		}
+	public AnAnswer findAnswer(String belongAnswerId,String quId){
+		Criterion criterion1=Restrictions.eq("belongAnswerId", belongAnswerId);
+		Criterion criterion2=Restrictions.eq("quId", quId);
+		return anAnswerDao.findUnique(criterion1,criterion2);
+	}
 
 
-		@Override
-		public void findGroupStats(Question question) {
+	@Override
+	public void findGroupStats(Question question) {
 			anAnswerDao.findGroupStats(question);
 		}
 			

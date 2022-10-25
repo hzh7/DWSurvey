@@ -4,6 +4,7 @@ import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
 import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.ReportItem;
+import net.diaowen.dwsurvey.entity.SurveyAnswer;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
  */
 public interface ReportItemManager extends BaseService<ReportItem, String>{
 
-	public ReportItem findUniqueBy(String id);
+//	public ReportItem findUniqueBy(String id);
 
 	public ReportItem getReportByUser(String id, String userId);
 
@@ -27,10 +28,15 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	/**
 	 * 生成pdf报告
-	 * @param reportId
-	 * @param itemId
-	 * @return
 	 */
-	public boolean generatePdfReport(String reportId, String itemId) throws Exception;
+	public ReportItem generatePdfReport(String reportId, String surveyAnswerId) throws Exception;
+
+	/**
+	 * 生成一份配置的报告的预览pdf
+	 * @param reportId 报告id
+	 */
+	public boolean generatePreviewPdfReport(String reportId) throws Exception;
+
+	public List<SurveyAnswer> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer);
 
 }
