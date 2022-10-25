@@ -1,24 +1,15 @@
 package net.diaowen.dwsurvey.service.impl;
 
-import net.diaowen.common.dao.BaseDaoImpl;
-import net.diaowen.common.plugs.httpclient.HttpResult;
+import net.diaowen.common.QuType;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
-import net.diaowen.dwsurvey.dao.ReportDirectoryDao;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
-import net.diaowen.dwsurvey.service.QuestionManager;
-import net.diaowen.dwsurvey.service.ReportDirectoryManager;
-import net.diaowen.dwsurvey.service.ReportItemManager;
-import net.diaowen.dwsurvey.service.ReportQuestionManager;
-import org.apache.poi.ss.formula.functions.T;
-import org.hibernate.criterion.Criterion;
+import net.diaowen.dwsurvey.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service("ReportItemManagerImpl")
@@ -31,6 +22,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     private ReportQuestionManager reportQuestionManager;
     @Autowired
     private QuestionManager questionManager;
+    @Autowired
+    private SurveyAnswerManager surveyAnswerManager;
+    @Autowired
+    private AnAnswerManager anAnswerManager;
 
     @Override
     public void setBaseDao() {
@@ -38,10 +33,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
 
-    @Override
-    public ReportItem findUniqueBy(String id) {
-        return null;
-    }
+//    @Override
+//    public ReportItem findUniqueBy(String id) {
+//        return reportItemDao.findUniqueBy("id", id);
+//    }
 
     @Override
     public ReportItem getReportByUser(String id, String userId) {
@@ -69,14 +64,91 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public boolean generatePdfReport(String reportId, String itemId) throws Exception {
-        if (reportId == null && itemId == null) {
+    public ReportItem generatePdfReport(String reportId, String surveyAnswerId) throws Exception {
+        if (reportId == null || surveyAnswerId == null) {
             throw new Exception("参数错误");
         }
-        if (itemId == null || itemId.equals("") || itemId.equals("0")) {
-            return generatePreviewPdfReport(reportId);
+        ReportItem newReportItem = new ReportItem();
+        newReportItem.setReportId(reportId);
+        newReportItem.setCreateDate(new Date());
+        newReportItem.setGenerateStatus("初始化");
+        newReportItem.setSurveyAnswerId(surveyAnswerId);
+
+        // 报告量表、维度
+        ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
+        ArrayList<Map<String, Object>> metricMap = new ArrayList<>();
+
+        // 报告
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        // 答卷
+        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+        // 答卷的题目及答案内容
+        List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+
+        // 报告中选中的题目
+        List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
+        for (Question question : questions) {
+            ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
+            if (reportQuestion == null) {
+                // 不是报告选中的题则跳过
+                continue;
+            }
+
+            AnAnswer anAnswer = anAnswerManager.findAnswer(surveyAnswerId, reportQuestion.getQuId());
+            if (reportQuestion.getReportQuType().equals(0)) {
+                // 维度信息题
+                HashMap<String, Object> quAnswerMap = new HashMap<>();
+                quAnswerMap.put("key", reportQuestion.getQuTitle());
+                quAnswerMap.put("value", getReportAnswer(question));
+                dimMap.add(quAnswerMap);
+            } else {
+                // 量表题
+                HashMap<String, Object> quAnswerMap = new HashMap<>();
+                quAnswerMap.put("key", reportQuestion.getQuTitle());  // 问题题目
+                quAnswerMap.put("score", getReportAnswer(question));  // 大题得分
+                quAnswerMap.put("agv_score_grade", reportQuestion.getQuTitle());  // 该题年级均分
+                quAnswerMap.put("agv_score_school", reportQuestion.getQuTitle());  // 该题全校均分
+                quAnswerMap.put("agv_score_all", anAnswer.getAnswer());  // 该题全体均分
+                dimMap.add(quAnswerMap);
+            }
+
         }
-        return false;
+        // 报告选中题目的答案
+        System.out.println(reportQuestions);
+
+
+        HashMap<String, Object> reportData = new HashMap<>();
+        reportData.put("reportId", reportId);
+        reportData.put("surveyId", report.getSurveyId());
+//        reportData.put("reportItemId", reportItemId);
+
+        // 人数相关的统计信息
+        Map<String, Integer> statisticsMap = new HashMap<>();
+
+        return null;
+    }
+
+    /**
+     * 解析问题答案获取报告需要呈现的内容
+     * @param question
+     * @return
+     */
+    private Object getReportAnswer(Question question) {
+        if (question.getQuType().equals(QuType.FILLBLANK)) {
+            return question.getAnFillblank().getAnswer();
+        }
+        if (question.getQuType().equals(QuType.SCORE)) {
+            List<AnScore> scores = question.getAnScores();
+            int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
+            return (float)sum/scores.size();
+        }
+        if (question.getQuType().equals(QuType.RADIO)) {
+            String quItemId = question.getAnRadio().getQuItemId();
+            QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
+            assert quRadio != null;
+            return quRadio.getOptionName();
+        }
+        return null;
     }
 
     /**
@@ -92,7 +164,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
      *         "school_num": 123,  # 学校数量
      *         "same_school_uv": 123,  # 同学校人数
      *         "same_school_grade_uv": 123  # 同学校同年级人数
-     *     },,
+     *     },
      *   "dim": [
      *     {
      *       "key": "姓名",
@@ -127,7 +199,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
      *   ]
      * }
      */
-    private boolean generatePreviewPdfReport(String reportId) {
+    @Override
+    public boolean generatePreviewPdfReport(String reportId) {
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
         // 报告中选中的题目
         List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
@@ -137,6 +210,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         reportData.put("reportId", reportId);
         reportData.put("surveyId", report.getSurveyId());
         reportData.put("reportItemId", null);
+
+        // 人数相关的统计信息
+        Map<String, Integer> statisticsMap = new HashMap<>();
+        statisticsMap.put("grade_range_uv", 12);
+        statisticsMap.put("same_grade_uv", 23);
+        statisticsMap.put("school_num", 34);
+        statisticsMap.put("same_school_uv", 45);
+        statisticsMap.put("same_school_grade_uv", 56);
+        reportData.put("statistics", statisticsMap);
 
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
@@ -191,6 +273,20 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         }
         String[] split = s.split("</span></b>")[0].split(">");
         return split[split.length - 1];
+    }
+
+    /**
+     * 获取一份问卷中指定题目回答了相同答案的答卷列表
+     * 如获取所有三年级学生的答卷信息
+     * @param surveyId
+     * @param quId
+     * @param targetAnswer
+     * @return
+     */
+    public List<SurveyAnswer> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer) {
+        List<String> sameAnswerInSurveyQu = reportItemDao.getSameAnswerInSurveyQu(surveyId, quId, targetAnswer);
+        System.out.println(sameAnswerInSurveyQu);
+        return null;
     }
 
 }

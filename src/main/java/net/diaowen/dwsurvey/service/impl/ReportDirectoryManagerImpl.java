@@ -48,8 +48,6 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         }
     }
 
-    @Transactional
-    @Override
     public ReportDirectory getReport(String id) {
         if(id==null || "".equals(id)){
             return new ReportDirectory();

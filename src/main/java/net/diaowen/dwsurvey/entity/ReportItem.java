@@ -4,6 +4,7 @@ import net.diaowen.common.base.entity.IdEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.util.Date;
 
 /**
  * 具体的一份问卷报告
@@ -16,7 +17,7 @@ public class ReportItem  extends IdEntity {
     private String surveyAnswerId;
     private String reportId;
     private String pdfAddr;
-    private java.sql.Timestamp createDate;
+    private Date createDate;
     private String userId;
     private String generateStatus;
     private String generateMsg;
@@ -58,11 +59,11 @@ public class ReportItem  extends IdEntity {
     }
 
 
-    public java.sql.Timestamp getCreateDate() {
+    public Date getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(java.sql.Timestamp createDate) {
+    public void setCreateDate(Date createDate) {
         this.createDate = createDate;
     }
 
