@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import net.diaowen.common.dao.BaseDao;
@@ -14,4 +15,10 @@ public interface SurveyAnswerDao extends BaseDao<SurveyAnswer, String>{
 	public SurveyStats surveyStatsData(SurveyStats surveyStats);
 
     Long countResult(String id);
+
+	/**
+	 * 指定surveyId下的所有答卷
+	 */
+	public List<SurveyAnswer> findBySurveyId(String surveyId);
+
 }

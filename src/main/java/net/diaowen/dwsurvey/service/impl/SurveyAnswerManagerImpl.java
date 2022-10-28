@@ -1,7 +1,8 @@
 package net.diaowen.dwsurvey.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
-import net.diaowen.common.base.entity.User;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.RunAnswerUtil;
@@ -71,6 +72,10 @@ public class SurveyAnswerManagerImpl extends
 	public void saveAnswer(SurveyAnswer surveyAnswer,
 			Map<String, Map<String, Object>> quMaps) {
 		surveyAnswerDao.saveAnswer(surveyAnswer, quMaps);
+		HashMap<String, HashMap<String, Object>> quAnswerInfo = buildQuAnswerInfo(surveyAnswer);
+		String jsonString = JSON.toJSONString(quAnswerInfo);
+		surveyAnswer.setQuAnswerInfo(jsonString);
+		surveyAnswerDao.save(surveyAnswer);
 	}
 
 	@Override
@@ -731,4 +736,58 @@ public class SurveyAnswerManagerImpl extends
 		super.delete(t);
 	}
 
+	/**
+	 * 构建一份答卷的问题答案信息
+	 */
+	private HashMap<String, HashMap<String, Object>> buildQuAnswerInfo(SurveyAnswer t) {
+		HashMap<String, HashMap<String, Object>> result = new HashMap<>();
+		// 答卷的题目及答案内容
+		List<Question> questions = findAnswerDetail(t);
+		for (Question question : questions) {
+			result.put(question.getId(), getQuestionAnswer(question));
+		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t) {
+		HashMap<String, Map<String, Object>> result = new HashMap<>();
+		String quAnswerInfo = t.getQuAnswerInfo();
+		Map<String, Object> jsonObject = JSONObject.parseObject(quAnswerInfo);
+		for (String s : jsonObject.keySet()) {
+			result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+		}
+		return result;
+	}
+
+	@Override
+	public List<SurveyAnswer> findBySurveyId(String surveyId) {
+		return surveyAnswerDao.findBySurveyId(surveyId);
+	}
+
+	/**
+	 * 解析问题答案获取报告需要呈现的内容
+	 */
+	private HashMap<String, Object> getQuestionAnswer(Question question) {
+		HashMap<String, Object> result = new HashMap<>();
+		if (question.getQuType().equals(QuType.FILLBLANK)) {
+			result.put("title", question.getQuTitle());
+			result.put("answer", question.getAnFillblank().getAnswer());
+		}
+		if (question.getQuType().equals(QuType.SCORE)) {
+			List<AnScore> scores = question.getAnScores();
+			int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
+			result.put("title", question.getQuTitle());
+			result.put("answer", (float)sum/scores.size());
+		}
+		if (question.getQuType().equals(QuType.RADIO)) {
+			String quItemId = question.getAnRadio().getQuItemId();
+			QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
+			assert quRadio != null;
+			result.put("title", question.getQuTitle());
+			result.put("answer", quRadio.getOptionName());
+		}
+		// todo 其他题型
+		return result;
+	}
 }

@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,4 +53,11 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	public SurveyDirectory upAnQuNum(SurveyDirectory surveyDirectory);
 
 	public List<SurveyDirectory> upAnQuNum(List<SurveyDirectory> result);
+
+	/**
+	 * 获取 存在表里的json答卷的问题答案信息，转为map
+	 */
+	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t);
+
+	public List<SurveyAnswer> findBySurveyId(String surveyId);
 }
