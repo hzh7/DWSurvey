@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service("ReportItemManagerImpl")
 public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> implements ReportItemManager {
@@ -72,6 +73,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         newReportItem.setCreateDate(new Date());
         newReportItem.setGenerateStatus("初始化");
         newReportItem.setSurveyAnswerId(surveyAnswerId);
+        reportItemDao.save(newReportItem);
 
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
@@ -79,128 +81,212 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         // 报告
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
-        // 答卷
+        // 目标答卷
         SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
-        // 答卷
-//        surveyAnswerManager.ge
+        Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(surveyAnswer.getQuAnswerInfo());
+
+        // 当前报告设定的问卷的所有答卷
+        List<SurveyAnswer> allSurveyAnswers = surveyAnswerManager.findBySurveyId(report.getSurveyId());
         // 答卷的题目及答案内容
         List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
-        // 同年级的答卷的量表题得分
-//        getQuScore(report, questions)
-
-        // 同学校的答卷
-        // 全体同学的答卷
-
         // 报告中选中的题目
         List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
+
+        // 同年级的答卷的量表题得分
+        Map<String, List<Double>> sameGradeScoreList = new HashMap<>();
+        // 同年级的答卷的量表题得分
+        Map<String, List<Double>> sameSchoolScoreList = new HashMap<>();
+        // 全体答卷的量表题得分
+        Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
+        // 年级 学校
+        String gradeQuId = "";
+        String schoolQuId = "";
+
+        // 处理维度题
         for (Question question : questions) {
             ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
             if (reportQuestion != null && reportQuestion.getReportQuType().equals(0)) {
-                continue;
                 // 维度信息题
-//                HashMap<String, Object> questionAnswer = getQuestionAnswer(question);
-//                dimMap.add(questionAnswer);
-//                if (questionAnswer.get("title").equals("年级")) {
-//                    getTargetQuAllScore(report, questions, questionAnswer.get("answer"));
-//                }
+                dimMap.add(quAnswerInfo.get(question.getId()));
+                // 若为年级题，获取同年级下答卷的所有得分列表
+                if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
+                    gradeQuId = question.getId();
+                    String grade = quAnswerInfo.get(question.getId()).get("answer").toString();
+                    sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
+                }
+                // 若为学校题，获取同学校下答卷的所有得分列表
+                if (quAnswerInfo.get(question.getId()).get("title").equals("学校")) {
+                    schoolQuId = question.getId();
+                    String school = quAnswerInfo.get(question.getId()).get("answer").toString();
+                    sameSchoolScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, school);
+                }
             }
         }
+
+        // todo
+        System.out.println(sameGradeScoreList);
+        System.out.println(sameSchoolScoreList);
+        System.out.println(allScoreList);
+
+        // 处理量表题
         for (Question question : questions) {
             ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
-            if (reportQuestion == null) {
-                // 不是报告选中的题则跳过
+            if (reportQuestion == null || reportQuestion.getReportQuType().equals(0)) {
+                // 不是报告选中的题或者维度题则跳过
                 continue;
             }
-
             AnAnswer anAnswer = anAnswerManager.findAnswer(surveyAnswerId, reportQuestion.getQuId());
-//            if (reportQuestion.getReportQuType().equals(0)) {
-//                // 维度信息题
-//                dimMap.add(getQuestionAnswer(question));
-//            } else {
-//                // 量表题
-//                HashMap<String, Object> quAnswerMap = getQuestionAnswer(question);
-//                quAnswerMap.put("agv_score_grade", reportQuestion.getQuTitle());  // 该题年级均分
-//                quAnswerMap.put("agv_score_school", reportQuestion.getQuTitle());  // 该题全校均分
-//                quAnswerMap.put("agv_score_all", anAnswer.getAnswer());  // 该题全体均分
-//                dimMap.add(quAnswerMap);
-//            }
-
+            // 量表题
+            Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
+            HashMap<String, Object> quAnswerMap = new HashMap<>() ;
+            quAnswerMap.put("key", stringObjectMap.get("title"));
+            quAnswerMap.put("score", stringObjectMap.get("answer"));
+            // 该题年级均分
+            quAnswerMap.put("agv_score_grade", sameGradeScoreList.get(question.getId()).stream().mapToDouble(x->x).average().getAsDouble());
+            // 该题全校均分
+            quAnswerMap.put("agv_score_school", sameSchoolScoreList.get(question.getId()).stream().mapToDouble(x->x).average().getAsDouble());
+            // 该题全体均分
+            quAnswerMap.put("agv_score_all", allScoreList.get(question.getId()).stream().mapToDouble(x->x).average().getAsDouble());
+            metricMap.add(quAnswerMap);
         }
         // 报告选中题目的答案
         System.out.println(reportQuestions);
 
 
+        // 人数相关的统计信息
+        Map<String, Integer> statisticsMap = new HashMap<>();
+        statisticsMap.put("grade_range_uv", 0);  // todo
+        String finalGradeQuId = gradeQuId;
+        statisticsMap.put("same_grade_uv",  (int) allSurveyAnswers.stream().filter(
+                x -> {
+                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    return theQuAnswerInfo.get(finalGradeQuId).get("answer").toString().equals(quAnswerInfo.get(finalGradeQuId).get("answer").toString());
+                }
+        ).count());
+
+        String finalSchoolQuId = schoolQuId;
+        statisticsMap.put("school_num", (int) allSurveyAnswers.stream().map(x -> {
+            Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+            return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString();
+        }).distinct().count());
+
+        statisticsMap.put("same_school_uv", (int) allSurveyAnswers.stream().filter(
+                x -> {
+                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString());
+                }
+        ).count());
+
+        statisticsMap.put("same_school_grade_uv", (int) allSurveyAnswers.stream().filter(
+                x -> {
+                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    return (theQuAnswerInfo.get(finalGradeQuId).get("answer").toString().equals(quAnswerInfo.get(finalGradeQuId).get("answer").toString()) &&
+                            theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString()));
+                }
+        ).count());
+
         HashMap<String, Object> reportData = new HashMap<>();
         reportData.put("reportId", reportId);
         reportData.put("surveyId", report.getSurveyId());
-//        reportData.put("reportItemId", reportItemId);
+        reportData.put("dimMap", dimMap);
+        reportData.put("metricMap", metricMap);
+        reportData.put("statisticsMap", statisticsMap);
 
-        // 人数相关的统计信息
-        Map<String, Integer> statisticsMap = new HashMap<>();
+        // 把构建的reportData来生成报告
+        System.out.println(reportData);
 
         return null;
     }
 
     /**
      * 获取一份问卷中指定题目回答了相同答案的答卷，计算这些问卷的所有量表题得分
-     * @param report
-     * @param questions
+     * @param surveyAnswers 指定问卷下的所有答卷
+     * @param question
      * @param answer
      */
-    private void getTargetQuAllScore(ReportDirectory report, List<Question> questions, Object answer) {
-
-
+    private Map<String, List<Double>> getTargetQuAgvScore(List<SurveyAnswer> surveyAnswers, List<ReportQuestion> reportQuestions, Question question, String answer) {
+        // 找到目标题型的答案为 answer 的答卷
+        List<SurveyAnswer> targetSurveyAnswers = surveyAnswers.stream().filter(x -> {
+            Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+            return quAnswerInfo.get(question.getId()).get("answer").toString().equals(answer);
+        }).collect(Collectors.toList());
+        return getTargetQuAgvScore(targetSurveyAnswers, reportQuestions);
     }
 
+    private Map<String, List<Double>> getTargetQuAgvScore(List<SurveyAnswer> surveyAnswers, List<ReportQuestion> reportQuestions) {
+        Map<String, List<Double>> result = new HashMap<>();
+        if (surveyAnswers.isEmpty()) {
+            return result;
+        }
+        Map<String, List<Double>> quMapScoreList = new HashMap<>();
+        // 量表题的id找出来作为key
+        reportQuestions.stream().filter(x->x.getReportQuType().equals(1)).forEach(x -> quMapScoreList.put(x.getId(), new ArrayList<>()));
+        surveyAnswers.forEach(x -> {
+            Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+            for (String key : quAnswerInfo.keySet()) {
+                // 非需要计算均值的量表题 则跳过
+                if (!quMapScoreList.containsKey(key)) {
+                    continue;
+                }
+                // 量表题的得分加入list
+                quMapScoreList.get(key).add((Double) quAnswerInfo.get(key).get("answer"));
+            }
+        });
+        return result;
+        // quMapScoreList.keySet().forEach(x -> {
+        //     result.put(x, quMapScoreList.get(x).stream().mapToDouble(y->y).average().getAsDouble());
+        // });
+        // return result;
+    }
 
-    /**
-     * 生成配置的报告的预览pdf
-     * 需要构造数据，形如：
-     *  {
-     *   "reportId": "111",  设计的报告id
-     *   "surveyId": "222",  问卷id
-     *   "reportItemId": "333",  具体一份报告的id
-     *   "statistics": {
-     *         "grade_range_uv": 123,  # 同学段人数（初中）
-     *         "same_grade_uv": 123,  # 同年级人数
-     *         "school_num": 123,  # 学校数量
-     *         "same_school_uv": 123,  # 同学校人数
-     *         "same_school_grade_uv": 123  # 同学校同年级人数
-     *     },
-     *   "dim": [
-     *     {
-     *       "key": "姓名",
-     *       "value": "xxx"
-     *     },
-     *     {
-     *       "key": "年级",
-     *       "value": "xxx"
-     *     },
-     *     {
-     *       "key": "在班级中的排名",
-     *       "value": "xxx"
-     *     }
-     *   ],
-     *   "metric": [
-     *     {
-     *       "key": "学习迁移",
-     *       "score": 2.9,
-     *       "agv_score_grade": 2.9,
-     *       "agv_score_school": 2.4,
-     *       "agv_score_all": 2.2,
-     *       "percentile": 79
-     *     },
-     *     {
-     *       "key": "学习情感",
-     *       "score": 2.9,
-     *       "agv_score_grade": 2.9,
-     *       "agv_score_school": 2.4,
-     *       "agv_score_all": 2.2,
-     *       "percentile": 79
-     *     }
-     *   ]
-     * }
-     */
+        /**
+         * 生成配置的报告的预览pdf
+         * 需要构造数据，形如：
+         *  {
+         *   "reportId": "111",  设计的报告id
+         *   "surveyId": "222",  问卷id
+         *   "reportItemId": "333",  具体一份报告的id
+         *   "statistics": {
+         *         "grade_range_uv": 123,  # 同学段人数（初中）
+         *         "same_grade_uv": 123,  # 同年级人数
+         *         "school_num": 123,  # 学校数量
+         *         "same_school_uv": 123,  # 同学校人数
+         *         "same_school_grade_uv": 123  # 同学校同年级人数
+         *     },
+         *   "dim": [
+         *     {
+         *       "key": "姓名",
+         *       "value": "xxx"
+         *     },
+         *     {
+         *       "key": "年级",
+         *       "value": "xxx"
+         *     },
+         *     {
+         *       "key": "在班级中的排名",
+         *       "value": "xxx"
+         *     }
+         *   ],
+         *   "metric": [
+         *     {
+         *       "key": "学习迁移",
+         *       "score": 2.9,
+         *       "agv_score_grade": 2.9,
+         *       "agv_score_school": 2.4,
+         *       "agv_score_all": 2.2,
+         *       "percentile": 79
+         *     },
+         *     {
+         *       "key": "学习情感",
+         *       "score": 2.9,
+         *       "agv_score_grade": 2.9,
+         *       "agv_score_school": 2.4,
+         *       "agv_score_all": 2.2,
+         *       "percentile": 79
+         *     }
+         *   ]
+         * }
+         */
     @Override
     public boolean generatePreviewPdfReport(String reportId) {
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
