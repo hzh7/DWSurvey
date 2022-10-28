@@ -749,6 +749,15 @@ public class SurveyAnswerManagerImpl extends
 		return result;
 	}
 
+//	public static Map<String, Map<String, Object>> getQuAnswerInfo(String quAnswerInfo) {
+//		HashMap<String, Map<String, Object>> result = new HashMap<>();
+//		Map<String, Object> jsonObject = JSONObject.parseObject(quAnswerInfo);
+//		for (String s : jsonObject.keySet()) {
+//			result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+//		}
+//		return result;
+//	}
+
 	@Override
 	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t) {
 		HashMap<String, Map<String, Object>> result = new HashMap<>();

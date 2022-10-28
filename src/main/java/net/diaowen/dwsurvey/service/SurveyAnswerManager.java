@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
@@ -58,6 +59,15 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	 * 获取 存在表里的json答卷的问题答案信息，转为map
 	 */
 	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t);
+
+	public static Map<String, Map<String, Object>> getQuAnswerInfo(String quAnswerInfo) {
+		HashMap<String, Map<String, Object>> result = new HashMap<>();
+		Map<String, Object> jsonObject = JSONObject.parseObject(quAnswerInfo);
+		for (String s : jsonObject.keySet()) {
+			result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+		}
+		return result;
+	}
 
 	public List<SurveyAnswer> findBySurveyId(String surveyId);
 }

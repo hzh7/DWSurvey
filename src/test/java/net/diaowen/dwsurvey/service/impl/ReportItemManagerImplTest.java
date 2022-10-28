@@ -45,4 +45,11 @@ class ReportItemManagerImplTest {
     void getSameAnswerInSurveyQu() {
         reportItemManager.getSameAnswerInSurveyQu("2fb7e1a7-faf3-48ce-bd17-0f96e62fd168", "37fd7a6e-15b1-4927-a8bb-4501182a58e4", "三年级");
     }
+
+    @Test
+    void testGeneratePdfReport() throws Exception {
+        String reportId = "a67cd0b1-5038-40cf-8929-dcda683ee72c";
+        String surveyAnswerId = "fdd9a2d2-5100-495f-bcb4-413af4953663";
+        reportItemManager.generatePdfReport(reportId, surveyAnswerId);
+    }
 }
