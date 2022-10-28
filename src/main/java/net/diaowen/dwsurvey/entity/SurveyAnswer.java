@@ -1,12 +1,17 @@
 package net.diaowen.dwsurvey.entity;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
+import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import net.diaowen.common.base.entity.IdEntity;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
 /**
  * 具体的一次调查
  * @author keyuan
@@ -16,6 +21,7 @@ import net.diaowen.common.base.entity.IdEntity;
  */
 @Entity
 @Table(name="t_survey_answer")
+@Proxy(lazy=false)
 public class SurveyAnswer extends IdEntity{
 	//问卷ID
 	private String surveyId;
@@ -60,6 +66,15 @@ public class SurveyAnswer extends IdEntity{
 	//数据来源  0网调  1录入数据 2移动数据 3导入数据
 	private Integer dataSource=0;
 
+	private String quAnswerInfo;
+
+	public String getQuAnswerInfo() {
+		return quAnswerInfo;
+	}
+
+	public void setQuAnswerInfo(String quAnswerInfo) {
+		this.quAnswerInfo = quAnswerInfo;
+	}
 
 	public String getSurveyId() {
 		return surveyId;

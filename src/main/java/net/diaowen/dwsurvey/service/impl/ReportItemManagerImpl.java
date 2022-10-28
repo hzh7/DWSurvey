@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service("ReportItemManagerImpl")
 public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> implements ReportItemManager {
@@ -82,11 +81,30 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
         // 答卷
         SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+        // 答卷
+//        surveyAnswerManager.ge
         // 答卷的题目及答案内容
         List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+        // 同年级的答卷的量表题得分
+//        getQuScore(report, questions)
+
+        // 同学校的答卷
+        // 全体同学的答卷
 
         // 报告中选中的题目
         List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
+        for (Question question : questions) {
+            ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
+            if (reportQuestion != null && reportQuestion.getReportQuType().equals(0)) {
+                continue;
+                // 维度信息题
+//                HashMap<String, Object> questionAnswer = getQuestionAnswer(question);
+//                dimMap.add(questionAnswer);
+//                if (questionAnswer.get("title").equals("年级")) {
+//                    getTargetQuAllScore(report, questions, questionAnswer.get("answer"));
+//                }
+            }
+        }
         for (Question question : questions) {
             ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
             if (reportQuestion == null) {
@@ -95,22 +113,17 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             }
 
             AnAnswer anAnswer = anAnswerManager.findAnswer(surveyAnswerId, reportQuestion.getQuId());
-            if (reportQuestion.getReportQuType().equals(0)) {
-                // 维度信息题
-                HashMap<String, Object> quAnswerMap = new HashMap<>();
-                quAnswerMap.put("key", reportQuestion.getQuTitle());
-                quAnswerMap.put("value", getReportAnswer(question));
-                dimMap.add(quAnswerMap);
-            } else {
-                // 量表题
-                HashMap<String, Object> quAnswerMap = new HashMap<>();
-                quAnswerMap.put("key", reportQuestion.getQuTitle());  // 问题题目
-                quAnswerMap.put("score", getReportAnswer(question));  // 大题得分
-                quAnswerMap.put("agv_score_grade", reportQuestion.getQuTitle());  // 该题年级均分
-                quAnswerMap.put("agv_score_school", reportQuestion.getQuTitle());  // 该题全校均分
-                quAnswerMap.put("agv_score_all", anAnswer.getAnswer());  // 该题全体均分
-                dimMap.add(quAnswerMap);
-            }
+//            if (reportQuestion.getReportQuType().equals(0)) {
+//                // 维度信息题
+//                dimMap.add(getQuestionAnswer(question));
+//            } else {
+//                // 量表题
+//                HashMap<String, Object> quAnswerMap = getQuestionAnswer(question);
+//                quAnswerMap.put("agv_score_grade", reportQuestion.getQuTitle());  // 该题年级均分
+//                quAnswerMap.put("agv_score_school", reportQuestion.getQuTitle());  // 该题全校均分
+//                quAnswerMap.put("agv_score_all", anAnswer.getAnswer());  // 该题全体均分
+//                dimMap.add(quAnswerMap);
+//            }
 
         }
         // 报告选中题目的答案
@@ -129,27 +142,16 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     /**
-     * 解析问题答案获取报告需要呈现的内容
-     * @param question
-     * @return
+     * 获取一份问卷中指定题目回答了相同答案的答卷，计算这些问卷的所有量表题得分
+     * @param report
+     * @param questions
+     * @param answer
      */
-    private Object getReportAnswer(Question question) {
-        if (question.getQuType().equals(QuType.FILLBLANK)) {
-            return question.getAnFillblank().getAnswer();
-        }
-        if (question.getQuType().equals(QuType.SCORE)) {
-            List<AnScore> scores = question.getAnScores();
-            int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
-            return (float)sum/scores.size();
-        }
-        if (question.getQuType().equals(QuType.RADIO)) {
-            String quItemId = question.getAnRadio().getQuItemId();
-            QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
-            assert quRadio != null;
-            return quRadio.getOptionName();
-        }
-        return null;
+    private void getTargetQuAllScore(ReportDirectory report, List<Question> questions, Object answer) {
+
+
     }
+
 
     /**
      * 生成配置的报告的预览pdf
@@ -284,9 +286,40 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
      * @return
      */
     public List<SurveyAnswer> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer) {
-        List<String> sameAnswerInSurveyQu = reportItemDao.getSameAnswerInSurveyQu(surveyId, quId, targetAnswer);
-        System.out.println(sameAnswerInSurveyQu);
+        List<String> sameAnswersInSurvey = reportItemDao.getSameAnswerInSurveyQu(surveyId, quId, targetAnswer);
+        System.out.println(sameAnswersInSurvey);
         return null;
+    }
+
+    /**
+     * 计算在一批答卷中，各题的得分列表
+     * @param surveyAnswerIds 要考虑的答卷范围
+     * @param quIds 需要计算的题目，当前仅支持量表类题目，即评分题
+     * @return {quId_1: [score_1, score_2... score_n]}
+     */
+    public Map<String, ArrayList<Float>> getQuScore(String surveyId, List<String> surveyAnswerIds, List<String> quIds){
+        Map<String, ArrayList<Float>> result = new HashMap<>();
+        for (String quId : quIds) {
+            result.put(quId, new ArrayList<>());
+        }
+        for (String surveyAnswerId : surveyAnswerIds) {
+            SurveyAnswer surveyAnswer = new SurveyAnswer();  // 构建个临时对象用于传参，避免查db
+            surveyAnswer.setSurveyId(surveyId);
+            surveyAnswer.setId(surveyAnswerId);
+            List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+            for (Question question : questions) {
+                if (!question.getQuType().equals(QuType.SCORE)) {
+                    // 当前仅支持对评分题计算得分
+                    continue;
+                }
+//                if (quIds.contains(question.getId())) {
+//                    HashMap<String, Object> questionAnswer = getQuestionAnswer(question);
+//                    result.get(question.getId()).add((Float) questionAnswer.get("answer"));
+//                }
+            }
+
+        }
+        return result;
     }
 
 }

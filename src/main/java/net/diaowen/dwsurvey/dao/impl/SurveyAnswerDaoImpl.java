@@ -479,4 +479,10 @@ public class SurveyAnswerDaoImpl extends BaseDaoImpl<SurveyAnswer, String> imple
 		return countCriteriaResult(c);
 	}
 
+    @Override
+    public List<SurveyAnswer> findBySurveyId(String surveyId) {
+		Criterion criterion1=Restrictions.eq("surveyId", surveyId);
+		return this.find(criterion1);
+    }
+
 }
