@@ -65,11 +65,13 @@ public class SurveyDesignController {
 		if(curUser!=null){
 			SurveyDirectory survey=surveyDirectoryManager.get(surveyId);
 			try{
+				surveyDirectoryManager.devCheck(survey);
 				surveyDirectoryManager.devSurvey(survey);
 //				sysLogManager.saveNew("发布问卷",survey.getId(),"DEV-SURVEY",curUser.getId(),1);
 				return HttpResult.SUCCESS();
 			}catch (Exception e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				return HttpResult.FAILURE(e.getMessage());
 			}
 		}else{
 			HttpResult.NOLOGIN();

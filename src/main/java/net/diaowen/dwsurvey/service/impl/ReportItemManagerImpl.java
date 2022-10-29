@@ -58,9 +58,12 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public Page<ReportItem> findPage(Page<ReportItem> page, String reportId) {
+    public Page<ReportItem> findPage(Page<ReportItem> page, String reportId, String userName) {
         List<Criterion> criterions = new ArrayList<>();
         criterions.add(Restrictions.eq("reportId", reportId));
+        if (userName != null) {
+            criterions.add(Restrictions.like("userName", "%"+userName+"%"));
+        }
 //        criterions.add(Restrictions.eq("visibility", 1));
         page.setOrderBy("createDate");
         page.setOrderDir("desc");
@@ -94,7 +97,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         ArrayList<Map<String, Object>> metricMap = new ArrayList<>();
 
         // 报告
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        ReportDirectory report = reportDirectoryManager.get(reportId);
         // 目标答卷
         SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
         Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(surveyAnswer.getQuAnswerInfo());
@@ -112,7 +115,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         Map<String, List<Double>> sameSchoolScoreList = new HashMap<>();
         // 全体答卷的量表题得分
         Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
-        // 姓名 年级 学校
+        // 姓名 年级 学校名称
         String userName = "";
         String gradeQuId = "";
         String schoolQuId = "";
@@ -138,8 +141,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                     String grade = quAnswerInfo.get(question.getId()).get("answer").toString();
                     sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
                 }
-                // 若为学校题，获取同学校下答卷的所有得分列表
-                if (quAnswerInfo.get(question.getId()).get("title").equals("学校")) {
+                // 若为学校名称题，获取同学校名称下答卷的所有得分列表
+                if (quAnswerInfo.get(question.getId()).get("title").equals("学校名称")) {
                     schoolQuId = question.getId();
                     String school = quAnswerInfo.get(question.getId()).get("answer").toString();
                     sameSchoolScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, school);
@@ -226,6 +229,30 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return newReportItem;
     }
 
+    @Override
+    public void initReportItem(String reportId) {
+        // 报告
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        // 当前报告设定的问卷的所有答卷
+        List<SurveyAnswer> allSurveyAnswers = surveyAnswerManager.findBySurveyId(report.getSurveyId());
+        for (SurveyAnswer surveyAnswer : allSurveyAnswers) {
+            // reportId + surveyAnswerId:唯一性约束,已有报告认为重新生成
+            ReportItem newReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportId, surveyAnswer.getId());
+            if (newReportItem == null) {
+                newReportItem = new ReportItem();
+                newReportItem.setReportId(reportId);
+                newReportItem.setCreateDate(new Date());
+                newReportItem.setGenerateStatus("初始化");
+                newReportItem.setSurveyAnswerId(surveyAnswer.getId());
+                reportItemDao.save(newReportItem);
+            }
+        }
+        // 更新报告的数量
+        List<ReportItem> byReportId = reportItemDao.findByReportId(reportId);
+        report.setReportNum(byReportId.size());
+        reportDirectoryManager.save(report);
+    }
+
     private String postGeneratePdf(JSONObject json) {
         String url = "http://localhost:8082/generate_pdf";
         String s = HttpRequest.sendPost(url, json);
@@ -297,9 +324,9 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
          *   "statistics": {
          *         "grade_range_uv": 123,  # 同学段人数（初中）
          *         "same_grade_uv": 123,  # 同年级人数
-         *         "school_num": 123,  # 学校数量
-         *         "same_school_uv": 123,  # 同学校人数
-         *         "same_school_grade_uv": 123  # 同学校同年级人数
+         *         "school_num": 123,  # 学校名称数量
+         *         "same_school_uv": 123,  # 同学校名称人数
+         *         "same_school_grade_uv": 123  # 同学校名称同年级人数
          *     },
          *   "dim": [
          *     {

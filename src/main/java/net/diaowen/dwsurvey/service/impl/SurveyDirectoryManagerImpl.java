@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 import net.diaowen.common.utils.parsehtml.HtmlUtil;
+import net.diaowen.dwsurvey.common.SurveyQuCheck;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.dao.SurveyDirectoryDao;
 import net.diaowen.dwsurvey.entity.Question;
@@ -595,6 +596,33 @@ public class SurveyDirectoryManagerImpl extends BaseServiceImpl<SurveyDirectory,
 			}
 		}
 
+	}
+
+	@Override
+	public void devCheck(SurveyDirectory surveyDirectory) throws Exception {
+		List<Question> questions=questionManager.findDetails(surveyDirectory.getId(), "2");
+		devCheck(questions);
+	}
+	@Override
+	public void devCheck(List<Question> questions) throws Exception {
+		List<String> quTitleList = new ArrayList<>();
+		for (Question question : questions) {
+			quTitleList.add(question.getQuTitle());
+		}
+		for (String q : SurveyQuCheck.quMust) {
+			if (!quTitleList.contains(q)) {
+				throw new Exception("["+ q + "]为必须添加的题目");
+			}
+		}
+		int scoreQuCnt = 0;
+		for (Question question : questions) {
+			if (question.getQuType().equals(QuType.SCORE)) {
+				scoreQuCnt += 1;
+			}
+		}
+		if (scoreQuCnt < 3) {
+			throw new Exception("量表题至少需要三题");
+		}
 	}
 
 	@Transactional

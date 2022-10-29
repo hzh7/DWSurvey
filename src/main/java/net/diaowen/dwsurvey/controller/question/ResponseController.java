@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
+import org.yaml.snakeyaml.util.UriEncoder;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
@@ -35,6 +36,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.*;
 
 import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
@@ -60,6 +62,8 @@ public class ResponseController {
 	@Autowired
 	private ReportQuestionManager reportQuestionManager;
 	@Autowired
+	private SurveyDirectoryManager surveyDirectoryManager;
+	@Autowired
 	private QuestionManager questionManager;
 	@Autowired
 	private IPService ipService;
@@ -76,15 +80,18 @@ public class ResponseController {
 	}
 	@RequestMapping("/saveReport.do")
 	public String saveReport(HttpServletRequest request,HttpServletResponse response,String reportId) throws Exception {
-		ReportDirectory directory = null;
 		try {
-//			directory = reportDirectoryManager.getReport(reportId);
-//			reportCheckData(request, directory);  fixme
-			parseReportQuestion(request, reportId);
-			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html";  // todo:报告编辑完成后的提示页面
+			Map<String, Map<String, String>> quChoseMap = buildSaveReportQuMap(request);
+			// 报告中的所有问题
+			List<Question> quIds = questionManager.findByQuIds(quChoseMap.keySet().toArray(new String[0]), false);
+			// 报告所选题目进行有效性检查
+			surveyDirectoryManager.devCheck(quIds);
+			// 处理/保存
+			parseReportQuestion(quChoseMap, quIds, reportId);
+			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html?respType=902";
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html?respType="+5+"&reportId="+reportId;
+			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html?respType=901&pwdCode=123dfasdfc&msg="+ UriEncoder.encode(e.getMessage());
 		}
 	}
 
@@ -93,10 +100,8 @@ public class ResponseController {
 	 * 当chose=y时候表示问卷中的该题被选中需要进入报告
 	 * type表示报告题型：0维度题 or 1量表题
 	 */
-	private void parseReportQuestion(HttpServletRequest request, String reportId) {
-		Map<String, Map<String, String>> quChoseMap = buildSaveReportQuMap(request);
-		// 报告中的所有问题
-		List<Question> quIds = questionManager.findByQuIds(quChoseMap.keySet().toArray(new String[0]), false);
+	private void parseReportQuestion(Map<String, Map<String, String>> quChoseMap, List<Question> quIds, String reportId) throws Exception {
+		// 保存  todo 幂等
 		for (String key : quChoseMap.keySet()) {
 			String chose = quChoseMap.get(key).get("chose");
 			if (chose.equals("y")) {
@@ -112,27 +117,6 @@ public class ResponseController {
 		}
 	}
 
-	/**
-	 * 问卷的报告选题检查
-	 * todo：姓名身份证等信息必填等
-	 */
-	private void reportCheckData(HttpServletRequest request, ReportDirectory directory) {
-//		AnswerCheckData answerCheckData = new AnswerCheckData();
-//		String surveyId = directory.getId();
-//		SurveyDetail surveyDetail = directory.getSurveyDetail();
-//		Integer answerNum = directory.getAnswerNum();
-//		Integer visibility = directory.getVisibility();
-//
-//		Integer effective = surveyDetail.getEffective();
-//		Integer rule = surveyDetail.getRule();
-//		Integer refresh = surveyDetail.getRefresh();
-//		Integer refreshNum = surveyDetail.getRefreshNum();
-//		Integer ynEndNum = surveyDetail.getYnEndNum();
-//		Integer endNum = surveyDetail.getEndNum();
-//		Integer ynEndTime = surveyDetail.getYnEndTime();
-//		Date endTime = surveyDetail.getEndTime();
-
-	}
 
 	@RequestMapping("/saveMobile.do")
 	public String saveMobile(HttpServletRequest request,HttpServletResponse response,String surveyId) throws Exception {

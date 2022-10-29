@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
+
 
 /**
  * 问卷回答记录
@@ -786,7 +788,7 @@ public class SurveyAnswerManagerImpl extends
 		if (question.getQuType().equals(QuType.SCORE)) {
 			List<AnScore> scores = question.getAnScores();
 			int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
-			result.put("title", question.getQuTitle());
+			result.put("title", matcherText(question.getQuTitle()));
 			result.put("answer", (float)sum/scores.size());
 		}
 		if (question.getQuType().equals(QuType.RADIO)) {
