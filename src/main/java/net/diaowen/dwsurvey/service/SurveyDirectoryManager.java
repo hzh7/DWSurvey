@@ -6,6 +6,7 @@ import java.util.List;
 import net.diaowen.common.plugs.httpclient.HttpResult;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
+import net.diaowen.dwsurvey.entity.Question;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
 
 /**
@@ -92,4 +93,9 @@ public interface SurveyDirectoryManager extends BaseService<SurveyDirectory, Str
 
 	void upSurveyState(String surveyId, Integer surveyState) throws IOException;
 
+	/**
+	 * 答卷有效性检查
+	 */
+	void devCheck(SurveyDirectory survey) throws Exception;
+	void devCheck(List<Question> questions) throws Exception;
 }

@@ -36,4 +36,10 @@ public class ReportItemDaoImpl extends BaseDaoImpl<ReportItem, String> implement
         Criterion criterion2= Restrictions.eq("surveyAnswerId", surveyAnswerId);
         return findFirst(criterion1, criterion2);
     }
+
+    @Override
+    public List<ReportItem> findByReportId(String reportId) {
+        Criterion criterion = Restrictions.eq("reportId", reportId);
+        return find(criterion);
+    }
 }

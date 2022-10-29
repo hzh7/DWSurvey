@@ -20,7 +20,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	public void saveReport(ReportItem entity);
 
-	public Page<ReportItem> findPage(Page<ReportItem> page, String reportId);
+	public Page<ReportItem> findPage(Page<ReportItem> page, String reportId, String userName);
 
 	public List<SurveyDirectory> findByIndex();
 
@@ -28,6 +28,11 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	 * 生成pdf报告
 	 */
 	public ReportItem generatePdfReport(String reportId, String surveyAnswerId) throws Exception;
+
+	/**
+	 * 生成pdf报告
+	 */
+	public void initReportItem(String reportId);
 
 	/**
 	 * 生成一份配置的报告的预览pdf

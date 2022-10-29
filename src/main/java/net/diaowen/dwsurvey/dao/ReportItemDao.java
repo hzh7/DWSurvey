@@ -17,4 +17,5 @@ public interface ReportItemDao extends BaseDao<ReportItem, String> {
     public List<String> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer);
 
     public ReportItem findByReportIdAndSurveyAnswerId(String reportId, String surveyAnswerId);
+    public List<ReportItem> findByReportId(String reportId);
 }

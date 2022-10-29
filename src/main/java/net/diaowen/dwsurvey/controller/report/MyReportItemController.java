@@ -52,12 +52,12 @@ public class MyReportItemController {
      */
     @RequestMapping(value = "/list.do",method = RequestMethod.GET)
     @ResponseBody
-    public PageResult<ReportItem> list(PageResult<ReportItem> pageResult, String reportId) {
+    public PageResult<ReportItem> list(PageResult<ReportItem> pageResult, String reportId, String userName) {
 
         User user = accountManager.getCurUser();
         if(user!=null){
             Page page = ResultUtils.getPageByPageResult(pageResult);
-            page = reportItemManager.findPage(page, reportId);
+            page = reportItemManager.findPage(page, reportId, userName);
             pageResult = ResultUtils.getPageResultByPage(page, pageResult);
         }
         return pageResult;
@@ -93,6 +93,23 @@ public class MyReportItemController {
             return HttpResult.SUCCESS("failed: " + e.getMessage());
         }
     }
+
+
+    /**
+     * 初始化问卷的报告,用于当新配置了报告历史报告未生成情况
+     */
+    @RequestMapping(value = "/init.do",method = RequestMethod.GET)
+    @ResponseBody
+    public HttpResult init(String reportId){
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        try {
+            reportItemManager.initReportItem(reportId);
+            return HttpResult.SUCCESS();
+        } catch (Exception e) {
+            return HttpResult.SUCCESS("failed: " + e.getMessage());
+        }
+    }
+
 
 
     /**
