@@ -3,12 +3,17 @@ package net.diaowen.dwsurvey.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
+import net.diaowen.common.base.entity.User;
+import net.diaowen.common.base.service.AccountManager;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.HttpRequest;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +34,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     private SurveyAnswerManager surveyAnswerManager;
     @Autowired
     private AnAnswerManager anAnswerManager;
-
+    @Autowired
+    private AccountManager accountManager;
     @Override
     public void setBaseDao() {
         this.baseDao = reportItemDao;
@@ -52,13 +58,14 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public Page<ReportItem> findPage(Page<ReportItem> page, String surveyName, Integer surveyState) {
-        return null;
-    }
-
-    @Override
-    public Page<SurveyDirectory> findByUser(Page<SurveyDirectory> page, String surveyName) {
-        return null;
+    public Page<ReportItem> findPage(Page<ReportItem> page, String reportId) {
+        List<Criterion> criterions = new ArrayList<>();
+        criterions.add(Restrictions.eq("reportId", reportId));
+//        criterions.add(Restrictions.eq("visibility", 1));
+        page.setOrderBy("createDate");
+        page.setOrderDir("desc");
+        page=reportItemDao.findPageList(page,criterions);
+        return page;
     }
 
     @Override
@@ -71,12 +78,16 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         if (reportId == null || surveyAnswerId == null) {
             throw new Exception("参数错误");
         }
-        ReportItem newReportItem = new ReportItem();
-        newReportItem.setReportId(reportId);
-        newReportItem.setCreateDate(new Date());
-        newReportItem.setGenerateStatus("初始化");
-        newReportItem.setSurveyAnswerId(surveyAnswerId);
-        reportItemDao.save(newReportItem);
+        // reportId + surveyAnswerId:唯一性约束,已有报告认为重新生成
+        ReportItem newReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportId, surveyAnswerId);
+        if (newReportItem == null) {
+            newReportItem = new ReportItem();
+            newReportItem.setReportId(reportId);
+            newReportItem.setCreateDate(new Date());
+            newReportItem.setGenerateStatus("初始化");
+            newReportItem.setSurveyAnswerId(surveyAnswerId);
+            reportItemDao.save(newReportItem);
+        }
 
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
@@ -101,7 +112,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         Map<String, List<Double>> sameSchoolScoreList = new HashMap<>();
         // 全体答卷的量表题得分
         Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
-        // 年级 学校
+        // 姓名 年级 学校
+        String userName = "";
         String gradeQuId = "";
         String schoolQuId = "";
 
@@ -115,12 +127,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 quAnswerMap.put("key", stringObjectMap.get("title"));
                 quAnswerMap.put("value", stringObjectMap.get("answer"));
                 dimMap.add(quAnswerMap);
+                // 若为姓名题，填充姓名值
+                if (quAnswerInfo.get(question.getId()).get("title").equals("姓名")) {
+                    userName = quAnswerInfo.get(question.getId()).get("answer").toString();
+                    newReportItem.setUserName(userName);
+                }
                 // 若为年级题，获取同年级下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
                     gradeQuId = question.getId();
                     String grade = quAnswerInfo.get(question.getId()).get("answer").toString();
-                    System.out.println(gradeQuId);
-                    System.out.println(grade);
                     sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
                 }
                 // 若为学校题，获取同学校下答卷的所有得分列表

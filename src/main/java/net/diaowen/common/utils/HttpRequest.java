@@ -152,7 +152,7 @@ public class HttpRequest {
             StringBuilder strber = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null)
-                strber.append(line).append("\n");
+                strber.append(line);
             inStream.close();
             result = strber.toString();
             if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {

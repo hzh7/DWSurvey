@@ -19,9 +19,11 @@ public class ReportItem  extends IdEntity {
     private String pdfAddr;
     private Date createDate;
     private String userId;
+    private String userName;
     private String generateStatus;
     private String generateMsg;
-
+    private Date generateDate;
+    private Integer visibility=1;
 
     public String getSid() {
         return sid;
@@ -31,6 +33,28 @@ public class ReportItem  extends IdEntity {
         this.sid = sid;
     }
 
+
+    public Date getGenerateDate() {
+        return generateDate;
+    }
+
+    public void setGenerateDate(Date generateDate) {
+        this.generateDate = generateDate;
+    }
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+    public Integer getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(Integer visibility) {
+        this.visibility = visibility;
+    }
 
     public String getSurveyAnswerId() {
         return surveyAnswerId;
