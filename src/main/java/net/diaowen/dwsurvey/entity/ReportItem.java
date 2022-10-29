@@ -94,4 +94,18 @@ public class ReportItem  extends IdEntity {
         this.generateMsg = generateMsg;
     }
 
+    @Override
+    public String toString() {
+        return "ReportItem{" +
+                "sid='" + sid + '\'' +
+                ", surveyAnswerId='" + surveyAnswerId + '\'' +
+                ", reportId='" + reportId + '\'' +
+                ", pdfAddr='" + pdfAddr + '\'' +
+                ", createDate=" + createDate +
+                ", userId='" + userId + '\'' +
+                ", generateStatus='" + generateStatus + '\'' +
+                ", generateMsg='" + generateMsg + '\'' +
+                ", id='" + id + '\'' +
+                '}';
+    }
 }

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.management.remote.rmi._RMIConnection_Stub;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.Arrays;
@@ -179,11 +180,10 @@ public class MyReportController {
             return HttpResult.FAILURE("答卷与报告配置不匹配");
         }
         try {
-            reportItemManager.generatePdfReport(reportId, surveyAnswerId);
+            return HttpResult.SUCCESS(reportItemManager.generatePdfReport(reportId, surveyAnswerId));
         } catch (Exception e) {
             return HttpResult.SUCCESS("failed: " + e.getMessage());
         }
-        return HttpResult.SUCCESS();
     }
 
     @RequestMapping("/readPdf")
@@ -191,13 +191,16 @@ public class MyReportController {
         response.reset();
         response.setContentType("application/pdf");
         try {
-            File file = new File("C:\\Users\\iHaozz\\Desktop\\思维与策略量表\\220805报告模板.pdf");
-            FileInputStream fileInputStream = new FileInputStream(file);
-            OutputStream outputStream = response.getOutputStream();
-            IOUtils.write(IOUtils.toByteArray(fileInputStream), outputStream);
-            response.setHeader("Content-Disposition",
-                    "inline; filename= file");
-            outputStream.flush();
+            ReportItem reportItem = reportItemManager.get(itemId);
+            if (Objects.equals(reportItem.getGenerateStatus(), "生成完毕") && reportItem.getPdfAddr() != null) {
+                File file = new File(reportItem.getPdfAddr());
+                FileInputStream fileInputStream = new FileInputStream(file);
+                OutputStream outputStream = response.getOutputStream();
+                IOUtils.write(IOUtils.toByteArray(fileInputStream), outputStream);
+                response.setHeader("Content-Disposition",
+                        "inline; filename= file");
+                outputStream.flush();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

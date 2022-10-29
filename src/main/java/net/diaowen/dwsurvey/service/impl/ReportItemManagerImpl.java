@@ -1,8 +1,11 @@
 package net.diaowen.dwsurvey.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
+import net.diaowen.common.utils.HttpRequest;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
@@ -107,11 +110,17 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
             if (reportQuestion != null && reportQuestion.getReportQuType().equals(0)) {
                 // 维度信息题
-                dimMap.add(quAnswerInfo.get(question.getId()));
+                Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
+                HashMap<String, Object> quAnswerMap = new HashMap<>() ;
+                quAnswerMap.put("key", stringObjectMap.get("title"));
+                quAnswerMap.put("value", stringObjectMap.get("answer"));
+                dimMap.add(quAnswerMap);
                 // 若为年级题，获取同年级下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
                     gradeQuId = question.getId();
                     String grade = quAnswerInfo.get(question.getId()).get("answer").toString();
+                    System.out.println(gradeQuId);
+                    System.out.println(grade);
                     sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
                 }
                 // 若为学校题，获取同学校下答卷的所有得分列表
@@ -124,9 +133,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         }
 
         // todo
-        System.out.println(sameGradeScoreList);
-        System.out.println(sameSchoolScoreList);
-        System.out.println(allScoreList);
+        // System.out.println("dimMap: " + dimMap);
+        // System.out.println("sameGradeScoreList: " + sameGradeScoreList);
+        // System.out.println("sameSchoolScoreList: " + sameSchoolScoreList);
+        // System.out.println("allScoreList: " + allScoreList);
 
         // 处理量表题
         for (Question question : questions) {
@@ -135,7 +145,6 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 // 不是报告选中的题或者维度题则跳过
                 continue;
             }
-            AnAnswer anAnswer = anAnswerManager.findAnswer(surveyAnswerId, reportQuestion.getQuId());
             // 量表题
             Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
             HashMap<String, Object> quAnswerMap = new HashMap<>() ;
@@ -147,11 +156,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             quAnswerMap.put("agv_score_school", sameSchoolScoreList.get(question.getId()).stream().mapToDouble(x->x).average().getAsDouble());
             // 该题全体均分
             quAnswerMap.put("agv_score_all", allScoreList.get(question.getId()).stream().mapToDouble(x->x).average().getAsDouble());
+            // 该题得分在全年级中的百分位数
+            quAnswerMap.put("percentile", percentileCalculate(Double.parseDouble(stringObjectMap.get("answer").toString()), sameGradeScoreList.get(question.getId())));
             metricMap.add(quAnswerMap);
         }
-        // 报告选中题目的答案
-        System.out.println(reportQuestions);
-
 
         // 人数相关的统计信息
         Map<String, Integer> statisticsMap = new HashMap<>();
@@ -188,16 +196,42 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         HashMap<String, Object> reportData = new HashMap<>();
         reportData.put("reportId", reportId);
         reportData.put("surveyId", report.getSurveyId());
+        reportData.put("reportItemId", report.getId());
         reportData.put("dimMap", dimMap);
         reportData.put("metricMap", metricMap);
         reportData.put("statisticsMap", statisticsMap);
 
         // 把构建的reportData来生成报告
-        System.out.println(reportData);
-
-        return null;
+        System.out.println("reportData: " + reportData);
+        JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(reportData));
+        String pdfPath = postGeneratePdf(jsonObject);
+        newReportItem.setPdfAddr(pdfPath);
+        newReportItem.setGenerateStatus("生成完毕");
+        reportItemDao.save(newReportItem);
+        return newReportItem;
     }
 
+    private String postGeneratePdf(JSONObject json) {
+        String url = "http://localhost:8082/generate_pdf";
+        String s = HttpRequest.sendPost(url, json);
+        System.out.println(s);
+        return s;
+    }
+
+    /**
+     * 计算score在list中的百分位
+     *
+     * @return
+     */
+    private int percentileCalculate(Double score, List<Double> scores) {
+        int cnt = 0;
+        for (Double s : scores) {
+            if (score >= s) {
+                cnt++;
+            }
+        }
+        return cnt * 100 / scores.size();
+    }
     /**
      * 获取一份问卷中指定题目回答了相同答案的答卷，计算这些问卷的所有量表题得分
      * @param surveyAnswers 指定问卷下的所有答卷
@@ -218,18 +252,17 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         if (surveyAnswers.isEmpty()) {
             return result;
         }
-        Map<String, List<Double>> quMapScoreList = new HashMap<>();
         // 量表题的id找出来作为key
-        reportQuestions.stream().filter(x->x.getReportQuType().equals(1)).forEach(x -> quMapScoreList.put(x.getId(), new ArrayList<>()));
+        reportQuestions.stream().filter(x->x.getReportQuType().equals(1)).forEach(x -> result.put(x.getQuId(), new ArrayList<>()));
         surveyAnswers.forEach(x -> {
             Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
             for (String key : quAnswerInfo.keySet()) {
                 // 非需要计算均值的量表题 则跳过
-                if (!quMapScoreList.containsKey(key)) {
+                if (!result.containsKey(key)) {
                     continue;
                 }
                 // 量表题的得分加入list
-                quMapScoreList.get(key).add((Double) quAnswerInfo.get(key).get("answer"));
+                result.get(key).add(Double.parseDouble(quAnswerInfo.get(key).get("answer").toString()));
             }
         });
         return result;
