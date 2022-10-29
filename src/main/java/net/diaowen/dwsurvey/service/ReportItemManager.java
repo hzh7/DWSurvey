@@ -20,9 +20,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	public void saveReport(ReportItem entity);
 
-	public Page<ReportItem> findPage(Page<ReportItem> page, String surveyName, Integer surveyState);
-
-	public Page<SurveyDirectory> findByUser(Page<SurveyDirectory> page, String surveyName);
+	public Page<ReportItem> findPage(Page<ReportItem> page, String reportId);
 
 	public List<SurveyDirectory> findByIndex();
 

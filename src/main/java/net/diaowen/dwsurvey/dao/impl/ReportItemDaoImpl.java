@@ -3,10 +3,10 @@ package net.diaowen.dwsurvey.dao.impl;
 import net.diaowen.common.dao.BaseDaoImpl;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.ReportItem;
-import net.diaowen.dwsurvey.entity.SurveyAnswer;
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Repository
@@ -28,5 +28,12 @@ public class ReportItemDaoImpl extends BaseDaoImpl<ReportItem, String> implement
                 .getResultList();
         return resultList;
 
+    }
+
+    @Override
+    public ReportItem findByReportIdAndSurveyAnswerId(String reportId, String surveyAnswerId) {
+        Criterion criterion1= Restrictions.eq("reportId", reportId);
+        Criterion criterion2= Restrictions.eq("surveyAnswerId", surveyAnswerId);
+        return findFirst(criterion1, criterion2);
     }
 }

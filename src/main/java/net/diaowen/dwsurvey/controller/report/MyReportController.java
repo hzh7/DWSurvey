@@ -132,31 +132,6 @@ public class MyReportController {
     }
 
     /**
-     * 报告的状态
-     * @param reportId
-     * @param itemId
-     * @return
-     */
-    @RequestMapping(value = "/state.do",method = RequestMethod.GET)
-    @ResponseBody
-    public HttpResult reportItemState(String reportId, String itemId){
-        // 无 itemId， 针对报告设计完成后进行报告展示内容的预览
-        if (itemId == null || itemId.equals("") || itemId.equals("0") ||
-                reportId == null || reportId.equals("") || reportId.equals("0")) {
-            return HttpResult.FAILURE("报告不存在");
-        }
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
-        if (report == null || report.getId() == null) {
-            return HttpResult.FAILURE("报告不存在");
-        }
-        ReportItem reportItem = reportItemManager.get(itemId);
-        if (reportItem == null || reportItem.getGenerateStatus() == null) {
-            return HttpResult.FAILURE("failed: 报告不存在");
-        }
-        return HttpResult.SUCCESS(reportItem.getGenerateStatus());
-    }
-
-    /**
      * 生成一份答卷的具体报告
      * @param reportId 报告id
      * @param surveyAnswerId 相应的问卷答案id
@@ -187,13 +162,15 @@ public class MyReportController {
     }
 
     @RequestMapping("/readPdf")
-    private void readPdf(HttpServletResponse response, String reportId, String itemId) {
+    private void readPdf(HttpServletResponse response, String reportItemId) {
         response.reset();
         response.setContentType("application/pdf");
         try {
-            ReportItem reportItem = reportItemManager.get(itemId);
+            ReportItem reportItem = reportItemManager.get(reportItemId);
             if (Objects.equals(reportItem.getGenerateStatus(), "生成完毕") && reportItem.getPdfAddr() != null) {
-                File file = new File(reportItem.getPdfAddr());
+                String replace = reportItem.getPdfAddr().replace("\\", "\\\\"); // fixme for win
+                System.out.println("replace: " + replace);
+                File file = new File(replace);
                 FileInputStream fileInputStream = new FileInputStream(file);
                 OutputStream outputStream = response.getOutputStream();
                 IOUtils.write(IOUtils.toByteArray(fileInputStream), outputStream);
