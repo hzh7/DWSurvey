@@ -4,8 +4,11 @@ import java.util.Date;
 import java.util.List;
 
 import net.diaowen.common.base.entity.User;
+import org.apache.logging.log4j.util.Strings;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Restrictions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +66,32 @@ public class AccountManager {
 //			sendNotifyMessage(email);	使用jms辅助 发送邮件
 			simpleMailService.sendRegisterMailByAsync(user);
 		}*/
+	}
+
+	/**
+	 * 新增临时用户， 主要根据问卷提交内容生成默认用户，可用于这些用户登录系统查看答卷与报告
+	 */
+	@Transactional
+	public User newTempUser(String email, String pwd) {
+		if (Strings.isEmpty(email) || Strings.isEmpty(pwd)) {
+			return null;
+		}
+		Criterion criterion = Restrictions.eq("email", email);
+		User user = userDao.findFirst(criterion);
+		//判断是否有重复用户
+		if (user != null) {
+			logger.info("user {} already exist", email);
+			return user;
+		}
+		user = new User();
+		user.setLoginName(email);
+		user.setEmail(email);
+		user.setShaPassword(DigestUtils.sha1Hex(pwd));
+		userDao.save(user);
+		if (shiroRealm != null) {
+			shiroRealm.clearCachedAuthorizationInfo(user.getLoginName());
+		}
+		return user;
 	}
 
 	@Transactional
