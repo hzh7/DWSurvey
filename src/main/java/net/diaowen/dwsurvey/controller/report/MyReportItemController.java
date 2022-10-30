@@ -118,7 +118,6 @@ public class MyReportItemController {
     }
 
 
-
     /**
      * 报告的状态
      * @param reportId
@@ -128,6 +127,10 @@ public class MyReportItemController {
     @RequestMapping(value = "/state.do",method = RequestMethod.GET)
     @ResponseBody
     public HttpResult reportItemState(String reportId, String itemId){
+        User curUser = accountManager.getCurUser();
+        if (curUser == null) {
+            return HttpResult.FAILURE("failed: 需要进行登录才可操作");
+        }
         // 无 itemId， 针对报告设计完成后进行报告展示内容的预览
         if (itemId == null || itemId.equals("") || itemId.equals("0") ||
                 reportId == null || reportId.equals("") || reportId.equals("0")) {
@@ -138,6 +141,9 @@ public class MyReportItemController {
             return HttpResult.FAILURE("报告不存在");
         }
         ReportItem reportItem = reportItemManager.get(itemId);
+        if (!report.getUserId().equals(curUser.getId()) && !reportItem.getUserId().equals(curUser.getId())) {
+            return HttpResult.FAILURE("failed: 无权查看");
+        }
         if (reportItem == null || reportItem.getGenerateStatus() == null) {
             return HttpResult.FAILURE("failed: 报告不存在");
         }

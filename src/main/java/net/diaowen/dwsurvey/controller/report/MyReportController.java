@@ -20,6 +20,8 @@ import java.io.*;
 import java.util.Map;
 import java.util.Objects;
 
+import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_SUCCESS;
+
 @Controller
 @RequestMapping("/api/dwsurvey/app/report")
 public class MyReportController {
@@ -33,10 +35,6 @@ public class MyReportController {
     private ReportItemManager reportItemManager;
     @Autowired
     private SurveyAnswerManager surveyAnswerManager;
-//    @Autowired
-//    private SurveyAnswerManager surveyAnswerManager;
-//    @Autowired
-//    private SurveyStatsManager surveyStatsManager;
 
     /**
      * 拉取问卷列表
@@ -157,12 +155,18 @@ public class MyReportController {
     private void readPdf(HttpServletResponse response, String reportItemId) {
         response.reset();
         response.setContentType("application/pdf");
+        User curUser = accountManager.getCurUser();
+        if (curUser == null) {
+            return;
+        }
         try {
             ReportItem reportItem = reportItemManager.get(reportItemId);
-            if (Objects.equals(reportItem.getGenerateStatus(), "生成完毕") && reportItem.getPdfAddr() != null) {
-                String replace = reportItem.getPdfAddr().replace("\\", "\\\\"); // fixme for win
-                System.out.println("replace: " + replace);
-                File file = new File(replace);
+            ReportDirectory report = reportDirectoryManager.get(reportItem.getReportId());
+            if (!report.getUserId().equals(curUser.getId()) && !reportItem.getUserId().equals(curUser.getId())) {
+                return;
+            }
+            if (Objects.equals(reportItem.getGenerateStatus(), REPORT_ITEM_STATUS_SUCCESS) && reportItem.getPdfAddr() != null) {
+                File file = new File(reportItem.getPdfAddr());
                 FileInputStream fileInputStream = new FileInputStream(file);
                 OutputStream outputStream = response.getOutputStream();
                 IOUtils.write(IOUtils.toByteArray(fileInputStream), outputStream);

@@ -34,7 +34,7 @@ public class ScheduleTask {
     //3.添加定时任务
     //或直接指定时间间隔，例如：5秒
     //@Scheduled(fixedRate=5000)
-    @Scheduled(cron = "0/5 * * * * ?")
+    @Scheduled(cron = "0 */5 * * * ?")
     private void reportMonitorTasks() {
         logger.info(LocalDateTime.now() + "  执行报告监控定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_ACTIVATED);
