@@ -30,6 +30,11 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	 */
 	@Deprecated
 	public ReportItem initAndGeneratePdfReport(String reportId, String surveyAnswerId) throws Exception;
+
+	/**
+	 * 新增了一份答卷时，触发问卷对应所有报告的生成
+	 */
+	public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception;
 	public ReportItem generatePdfReport(ReportItem reportItem);
 
 	/**

@@ -1,6 +1,5 @@
 package net.diaowen.common.service;
 
-import net.diaowen.common.utils.ReflectionUtils;
 import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.ReportItem;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
@@ -24,7 +23,7 @@ import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_STATUS_ACTIVATED;
 @Configuration      //1.主要用于标记配置类，兼备Component的效果。
 @EnableScheduling   // 2.开启定时任务
 public class ScheduleTask {
-    private static Logger logger = LoggerFactory.getLogger(ScheduleTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(ScheduleTask.class);
 
     @Autowired
     ReportDirectoryManager reportDirectoryManager;

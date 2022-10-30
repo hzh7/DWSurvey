@@ -79,7 +79,15 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     @Override
     public List<ReportDirectory> findByState(Integer reportState) {
         Criterion c1 = Restrictions.eq("reportState", reportState);
-        return reportDirectoryDao.find(c1);
+        Criterion c2 = Restrictions.eq("visibility", 1);
+        return reportDirectoryDao.find(c1, c2);
+    }
+
+    @Override
+    public List<ReportDirectory> findBySurveyId(String surveyId) {
+        Criterion c1 = Restrictions.eq("surveyId", surveyId);
+        Criterion c2 = Restrictions.eq("visibility", 1);
+        return reportDirectoryDao.find(c1, c2);
     }
 
 

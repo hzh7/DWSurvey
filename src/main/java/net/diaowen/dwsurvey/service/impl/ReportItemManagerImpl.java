@@ -14,13 +14,13 @@ import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_INIT;
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_SUCCESS;
+import static net.diaowen.dwsurvey.common.CommonStatic.*;
 
 @Service("ReportItemManagerImpl")
 public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> implements ReportItemManager {
@@ -117,6 +117,23 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         }
         ReportItem reportItem = initReportItem(reportId, surveyAnswerId);
         return generatePdfReport(reportItem);
+    }
+
+//    @Async todo 测试异步该函数
+    @Override
+    public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception {
+        String surveyId = surveyAnswer.getSurveyId();
+        List<ReportDirectory> reportDirectories = reportDirectoryManager.findBySurveyId(surveyId);
+        for (ReportDirectory reportDirectory : reportDirectories) {
+            // 若报告是激活中（样本量未达到预设值），仅初始化报告
+            if (reportDirectory.getReportState().equals(REPORT_STATUS_ACTIVATED)) {
+                initReportItem(reportDirectory.getId(), surveyAnswer.getId());
+            }
+            // 若报告是生效中，初始化报告并生成
+            if (reportDirectory.getReportState().equals(REPORT_STATUS_EFFECTIVE)) {
+                initAndGeneratePdfReport(reportDirectory.getId(), surveyAnswer.getId());
+            }
+        }
     }
 
     @Override
