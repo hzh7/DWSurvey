@@ -55,7 +55,7 @@ public class ResponseController {
 	@Autowired
 	private SurveyDirectoryManager directoryManager;
 	@Autowired
-	private ReportDirectoryManager reportDirectoryManager;
+	private ReportItemManager reportItemManager;
 	@Autowired
 	private ReportQuestionManager reportQuestionManager;
 	@Autowired
@@ -130,6 +130,7 @@ public class ResponseController {
 			answerSurvey(request,surveyId,entity);
 			parseUser(entity);
 			answerAfterUpData(request,response,surveyId,entity.getId());
+			reportItemManager.initAndGenerateReportItem(entity);
 			return answerRedirect(directory,6, entity.getId());
 		} catch (Exception e) {
 			e.printStackTrace();
