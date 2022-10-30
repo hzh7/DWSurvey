@@ -144,9 +144,13 @@ public class ResponseController {
 			return;
 		}
 		List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+		String name = null;
 		String email = null;
 		String pwd = null;
 		for (Question question : questions) {
+			if (question.getQuTitle().contains("姓名")) {
+				name = question.getAnFillblank().getAnswer();
+			}
 			if (question.getQuTitle().contains("邮箱")) {
 				email = question.getAnFillblank().getAnswer();
 			}
@@ -159,7 +163,7 @@ public class ResponseController {
 			}
 		}
 		// 匿名下的答卷根据问卷信息回填答卷用户id
-		User user = accountManager.newTempUser(email, pwd);
+		User user = accountManager.newTempUser(email, pwd, name);
 		if (user != null) {
 			surveyAnswer.setUserId(user.getId());
 			surveyAnswerManager.save(surveyAnswer);

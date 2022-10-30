@@ -72,7 +72,7 @@ public class AccountManager {
 	 * 新增临时用户， 主要根据问卷提交内容生成默认用户，可用于这些用户登录系统查看答卷与报告
 	 */
 	@Transactional
-	public User newTempUser(String email, String pwd) {
+	public User newTempUser(String email, String pwd, String name) {
 		if (Strings.isEmpty(email) || Strings.isEmpty(pwd)) {
 			return null;
 		}
@@ -86,6 +86,7 @@ public class AccountManager {
 		user = new User();
 		user.setLoginName(email);
 		user.setEmail(email);
+		user.setName(name);
 		user.setShaPassword(DigestUtils.sha1Hex(pwd));
 		userDao.save(user);
 		if (shiroRealm != null) {

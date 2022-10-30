@@ -617,11 +617,13 @@ public class SurveyAnswerManagerImpl extends
 		HashMap<String, SurveyDirectory> surveyMap = new HashMap<>();
 		List<SurveyDirectory> surveys = surveyDirectoryManager.findByIds(surveyIds);
 		surveys.forEach(x-> surveyMap.put(x.getId(), x));
-		page.getResult().forEach(x -> {
-			SurveyDirectory surveyDirectory = new SurveyDirectory();
-			surveyDirectory.setSurveyName(surveyMap.get(x.getSurveyId()).getSurveyName());
-			x.setSurveyDirectory(surveyDirectory);
-		});
+		page.getResult()
+				.stream().filter(x -> surveyMap.containsKey(x.getSurveyId()))  // 要过滤已经被删除的问卷
+				.forEach(x -> {
+					SurveyDirectory surveyDirectory = new SurveyDirectory();
+					surveyDirectory.setSurveyName(surveyMap.get(x.getSurveyId()).getSurveyName());
+					x.setSurveyDirectory(surveyDirectory);
+				});
 		return page;
 	}
 	public List<SurveyAnswer> answerList(String surveyId,Integer isEff) {
