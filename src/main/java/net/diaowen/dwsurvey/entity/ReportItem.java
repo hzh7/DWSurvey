@@ -22,7 +22,7 @@ public class ReportItem  extends IdEntity {
     private Date createDate;
     private String userId;
     private String userName;
-    private String generateStatus;
+    private Integer generateStatus;
     private String generateMsg;
     private Date generateDate;
     private Integer visibility=1;
@@ -103,11 +103,11 @@ public class ReportItem  extends IdEntity {
     }
 
 
-    public String getGenerateStatus() {
+    public Integer getGenerateStatus() {
         return generateStatus;
     }
 
-    public void setGenerateStatus(String generateStatus) {
+    public void setGenerateStatus(Integer generateStatus) {
         this.generateStatus = generateStatus;
     }
 

@@ -7,10 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class ReportItemManagerImplTest {
@@ -20,7 +16,7 @@ class ReportItemManagerImplTest {
 
     @Test
     void generatePdfReport() throws Exception {
-        ReportItem b = reportItemManager.generatePdfReport("984539ed-e06d-4cc6-8396-3eda62ae1d1b", "");
+        ReportItem b = reportItemManager.initAndGeneratePdfReport("984539ed-e06d-4cc6-8396-3eda62ae1d1b", "");
         System.out.println(b);
     }
 
@@ -50,6 +46,6 @@ class ReportItemManagerImplTest {
     void testGeneratePdfReport() throws Exception {
         String reportId = "a67cd0b1-5038-40cf-8929-dcda683ee72c";
         String surveyAnswerId = "fdd9a2d2-5100-495f-bcb4-413af4953663";
-        reportItemManager.generatePdfReport(reportId, surveyAnswerId);
+        reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId);
     }
 }

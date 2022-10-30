@@ -18,6 +18,7 @@ public interface ReportDirectoryManager extends BaseService<ReportDirectory, Str
 //	public Page<ReportDirectory> findPage(Page<ReportDirectory> page, String surveyName, Integer surveyState);
 
 	public Page<ReportDirectory> findByUser(Page<ReportDirectory> page, String reportName);
+	public List<ReportDirectory> findByState(Integer reportState);
 
 	public void saveBaseUp(ReportDirectory t);
 

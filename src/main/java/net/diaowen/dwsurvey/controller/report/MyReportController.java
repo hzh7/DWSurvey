@@ -2,9 +2,7 @@ package net.diaowen.dwsurvey.controller.report;
 
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
-import net.diaowen.common.dao.BaseHttpDao;
 import net.diaowen.common.plugs.httpclient.HttpResult;
-import net.diaowen.common.plugs.httpclient.HttpStatus;
 import net.diaowen.common.plugs.httpclient.PageResult;
 import net.diaowen.common.plugs.httpclient.ResultUtils;
 import net.diaowen.common.plugs.page.Page;
@@ -17,10 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.management.remote.rmi._RMIConnection_Stub;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -62,28 +58,22 @@ public class MyReportController {
 
 
     /**
-     * 获取问卷详情
-     * @param id
+     * 拉取问卷列表
      * @return
      */
-//    @RequestMapping(value = "/info.do",method = RequestMethod.GET)
-//    @ResponseBody
-//    public HttpResult<SurveyDirectory> info(String id) {
-//        try{
-//            User user = accountManager.getCurUser();
-//            if(user!=null){
-//                surveyStatsManager.findBySurvey(id);
-//                SurveyDirectory survey = surveyDirectoryManager.findUniqueBy(id);
-//                survey = surveyAnswerManager.upAnQuNum(survey);
-//                return HttpResult.SUCCESS(survey);
-//            }else{
-//                return HttpResult.buildResult(HttpStatus.NOLOGIN);
-//            }
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//        return HttpResult.FAILURE();
-//    }
+    @RequestMapping(value = "/minSampleSize.do",method = RequestMethod.POST)
+    @ResponseBody
+    public HttpResult minSampleSize(String reportId, Integer minSampleSize) {
+        User user = accountManager.getCurUser();
+        if(user!=null){
+            ReportDirectory reportDirectory = reportDirectoryManager.get(reportId);
+            reportDirectory.setMinSampleSize(minSampleSize);
+            reportDirectoryManager.save(reportDirectory);
+            return HttpResult.SUCCESS();
+        }
+        return HttpResult.FAILURE();
+    }
+
 
     /**
      * 创建新报告
@@ -119,7 +109,9 @@ public class MyReportController {
                     if(map.containsKey("id")){
                         String[] ids = map.get("id");
                         if(ids!=null){
-                            reportDirectoryManager.delete(Arrays.toString(ids));
+                            for (String id : ids) {
+                                reportDirectoryManager.delete(id);
+                            }
                             return HttpResult.SUCCESS();
                         }
                     }
@@ -155,7 +147,7 @@ public class MyReportController {
             return HttpResult.FAILURE("答卷与报告配置不匹配");
         }
         try {
-            return HttpResult.SUCCESS(reportItemManager.generatePdfReport(reportId, surveyAnswerId));
+            return HttpResult.SUCCESS(reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId));
         } catch (Exception e) {
             return HttpResult.SUCCESS("failed: " + e.getMessage());
         }

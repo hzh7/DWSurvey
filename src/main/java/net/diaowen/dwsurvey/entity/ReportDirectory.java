@@ -30,7 +30,15 @@ import java.util.Date;
 	private Integer visibility=1;
 	private Integer surveyType;
 	private Integer previewPdfState=0;
+	private Integer minSampleSize=0;
 
+	public Integer getMinSampleSize() {
+		return minSampleSize;
+	}
+
+	public void setMinSampleSize(Integer minSampleSize) {
+		this.minSampleSize = minSampleSize;
+	}
 
 	public Integer getPreviewPdfState() {
 		return previewPdfState;

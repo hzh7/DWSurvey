@@ -76,6 +76,12 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         return page;
     }
 
+    @Override
+    public List<ReportDirectory> findByState(Integer reportState) {
+        Criterion c1 = Restrictions.eq("reportState", reportState);
+        return reportDirectoryDao.find(c1);
+    }
+
 
     @Transactional
     @Override
@@ -92,5 +98,14 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
             super.save(reportDirectory);
         }
 
+    }
+
+    @Transactional
+    @Override
+    public void delete(String id) {
+        //设为不可见
+        ReportDirectory reportDirectory = get(id);
+        reportDirectory.setVisibility(0);
+        reportDirectoryDao.save(reportDirectory);
     }
 }

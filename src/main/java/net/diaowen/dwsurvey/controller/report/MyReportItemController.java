@@ -12,26 +12,16 @@ import net.diaowen.dwsurvey.entity.SurveyAnswer;
 import net.diaowen.dwsurvey.service.ReportDirectoryManager;
 import net.diaowen.dwsurvey.service.ReportItemManager;
 import net.diaowen.dwsurvey.service.SurveyAnswerManager;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/api/dwsurvey/app/reportItem")
@@ -106,7 +96,7 @@ public class MyReportItemController {
             return HttpResult.FAILURE("答卷与报告配置不匹配");
         }
         try {
-            return HttpResult.SUCCESS(reportItemManager.generatePdfReport(reportId, surveyAnswerId));
+            return HttpResult.SUCCESS(reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId));
         } catch (Exception e) {
             return HttpResult.SUCCESS("failed: " + e.getMessage());
         }
@@ -119,7 +109,6 @@ public class MyReportItemController {
     @RequestMapping(value = "/init.do",method = RequestMethod.GET)
     @ResponseBody
     public HttpResult init(String reportId){
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
         try {
             reportItemManager.initReportItem(reportId);
             return HttpResult.SUCCESS();
