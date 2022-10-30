@@ -3,8 +3,6 @@ package net.diaowen.dwsurvey.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
-import net.diaowen.common.base.entity.IdEntity;
-import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
@@ -12,16 +10,17 @@ import net.diaowen.common.utils.HttpRequest;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.SimpleExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_INIT;
+import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_SUCCESS;
 
 @Service("ReportItemManagerImpl")
 public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> implements ReportItemManager {
@@ -98,27 +97,32 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         reportItems.forEach(x->x.setReportName(reportIdNameMap.get(x.getReportId())));
         return reportItems;
     }
+
+    @Override
+    public List<ReportItem> findByStatus(String reportId, Integer generateStatus) {
+        Criterion c1 = Restrictions.eq("reportId", reportId);
+        Criterion c2 = Restrictions.eq("generateStatus", generateStatus);
+        return reportItemDao.find(c1, c2);
+    }
+
     @Override
     public List<SurveyDirectory> findByIndex() {
         return null;
     }
 
     @Override
-    public ReportItem generatePdfReport(String reportId, String surveyAnswerId) throws Exception {
+    public ReportItem initAndGeneratePdfReport(String reportId, String surveyAnswerId) throws Exception {
         if (reportId == null || surveyAnswerId == null) {
             throw new Exception("参数错误");
         }
-        // reportId + surveyAnswerId:唯一性约束,已有报告认为重新生成
-        ReportItem newReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportId, surveyAnswerId);
-        if (newReportItem == null) {
-            newReportItem = new ReportItem();
-            newReportItem.setReportId(reportId);
-            newReportItem.setCreateDate(new Date());
-            newReportItem.setGenerateStatus("初始化");
-            newReportItem.setSurveyAnswerId(surveyAnswerId);
-            reportItemDao.save(newReportItem);
-        }
+        ReportItem reportItem = initReportItem(reportId, surveyAnswerId);
+        return generatePdfReport(reportItem);
+    }
 
+    @Override
+    public ReportItem generatePdfReport(ReportItem reportItem) {
+        String reportId = reportItem.getReportId();
+        String surveyAnswerId = reportItem.getSurveyAnswerId();
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
         ArrayList<Map<String, Object>> metricMap = new ArrayList<>();
@@ -160,7 +164,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 // 若为姓名题，填充姓名值
                 if (quAnswerInfo.get(question.getId()).get("title").equals("姓名")) {
                     userName = quAnswerInfo.get(question.getId()).get("answer").toString();
-                    newReportItem.setUserName(userName);
+                    reportItem.setUserName(userName);
                 }
                 // 若为年级题，获取同年级下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
@@ -250,10 +254,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         System.out.println("reportData: " + reportData);
         JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(reportData));
         String pdfPath = postGeneratePdf(jsonObject);
-        newReportItem.setPdfAddr(pdfPath);
-        newReportItem.setGenerateStatus("生成完毕");
-        reportItemDao.save(newReportItem);
-        return newReportItem;
+        reportItem.setPdfAddr(pdfPath);
+        reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
+        reportItemDao.save(reportItem);
+        return reportItem;
     }
 
     @Override
@@ -269,7 +273,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 newReportItem = new ReportItem();
                 newReportItem.setReportId(reportId);
                 newReportItem.setCreateDate(new Date());
-                newReportItem.setGenerateStatus("初始化");
+                newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
                 newReportItem.setSurveyAnswerId(surveyAnswer.getId());
                 reportItemDao.save(newReportItem);
             }
@@ -278,6 +282,24 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         List<ReportItem> byReportId = reportItemDao.findByReportId(reportId);
         report.setReportNum(byReportId.size());
         reportDirectoryManager.save(report);
+    }
+
+    @Override
+    public ReportItem initReportItem(String reportId, String surveyAnswerId) {
+        if (reportId == null || surveyAnswerId == null) {
+            return null;
+        }
+        // reportId + surveyAnswerId:唯一性约束,已有报告认为重新生成
+        ReportItem newReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportId, surveyAnswerId);
+        if (newReportItem == null) {
+            newReportItem = new ReportItem();
+            newReportItem.setReportId(reportId);
+            newReportItem.setCreateDate(new Date());
+            newReportItem.setSurveyAnswerId(surveyAnswerId);
+        }
+        newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
+        reportItemDao.save(newReportItem);
+        return newReportItem;
     }
 
     private String postGeneratePdf(JSONObject json) {

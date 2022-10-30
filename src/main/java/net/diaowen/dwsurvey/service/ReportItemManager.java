@@ -2,7 +2,6 @@ package net.diaowen.dwsurvey.service;
 
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
-import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.ReportItem;
 import net.diaowen.dwsurvey.entity.SurveyAnswer;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
@@ -22,18 +21,23 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	public Page<ReportItem> findPage(Page<ReportItem> page, String reportId, String userName);
 	public List<ReportItem> findByUserId(String userId, String surveyAnswerId);
+	public List<ReportItem> findByStatus(String reportId, Integer generateStatus);
 
 	public List<SurveyDirectory> findByIndex();
 
 	/**
 	 * 生成pdf报告
 	 */
-	public ReportItem generatePdfReport(String reportId, String surveyAnswerId) throws Exception;
+	@Deprecated
+	public ReportItem initAndGeneratePdfReport(String reportId, String surveyAnswerId) throws Exception;
+	public ReportItem generatePdfReport(ReportItem reportItem);
 
 	/**
-	 * 生成pdf报告
+	 * 初始化问卷的报告,用于当新配置了报告历史报告未生成情况
 	 */
 	public void initReportItem(String reportId);
+
+	public ReportItem initReportItem(String reportId, String surveyAnswerId);
 
 	/**
 	 * 生成一份配置的报告的预览pdf
