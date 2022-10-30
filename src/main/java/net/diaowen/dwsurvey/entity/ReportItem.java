@@ -1,6 +1,7 @@
 package net.diaowen.dwsurvey.entity;
 
 import net.diaowen.common.base.entity.IdEntity;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
