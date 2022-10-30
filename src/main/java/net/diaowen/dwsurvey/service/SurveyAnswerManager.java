@@ -45,6 +45,11 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	 */
 	public Page<SurveyAnswer> answerPage(Page<SurveyAnswer> page, String surveyId);
 
+	/**
+	 * 取出指定用户的所有答卷数据
+	 */
+	public Page<SurveyAnswer> answerPageByUserId(Page<SurveyAnswer> page, String userId);
+
 	public void deleteData(String[] ids);
 
 	public int getquestionAnswer(String surveyAnswerId, Question question);

@@ -3,6 +3,7 @@ package net.diaowen.dwsurvey.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
+import net.diaowen.common.base.entity.IdEntity;
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
 import net.diaowen.common.plugs.page.Page;
@@ -12,8 +13,10 @@ import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.SimpleExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -71,6 +74,30 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return page;
     }
 
+    @Override
+    public List<ReportItem> findByUserId(String userId, String surveyAnswerId) {
+        List<ReportItem> reportItems = null;
+        Criterion c1 = Restrictions.eq("userId", userId);
+        if (Strings.isEmpty(surveyAnswerId)) {
+            Criterion c2 = Restrictions.eq("surveyAnswerId", surveyAnswerId);
+            reportItems = reportItemDao.find(c1, c2);
+        }else {
+            reportItems = reportItemDao.find(c1);
+        }
+//        if (!Strings.isEmpty(surveyId)) {
+//            // 如果指定了surveyId，则根据reportIds关联出问卷id进行过滤
+//            List<String> reportIds = reportItems.stream().map(ReportItem::getReportId).collect(Collectors.toList());
+//            List<ReportDirectory> reportDirectories = reportDirectoryManager.findList(Restrictions.in("id", reportIds));
+//            List<String> targetReportIds = reportDirectories.stream().filter(x -> x.getSurveyId().equals(surveyId)).map(IdEntity::getId).collect(Collectors.toList());
+//            reportItems = reportItems.stream().filter(x -> targetReportIds.contains(x.getReportId())).collect(Collectors.toList());
+//        }
+        List<String> reportIds = reportItems.stream().map(ReportItem::getReportId).collect(Collectors.toList());
+        List<ReportDirectory> reportDirectories = reportDirectoryManager.findList(Restrictions.in("id", reportIds));
+        HashMap<String, String> reportIdNameMap = new HashMap<>();
+        reportDirectories.forEach(x->reportIdNameMap.put(x.getId(), x.getReportName()));
+        reportItems.forEach(x->x.setReportName(reportIdNameMap.get(x.getReportId())));
+        return reportItems;
+    }
     @Override
     public List<SurveyDirectory> findByIndex() {
         return null;

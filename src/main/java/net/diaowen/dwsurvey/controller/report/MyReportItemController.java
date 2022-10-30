@@ -28,8 +28,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/api/dwsurvey/app/reportItem")
@@ -61,6 +63,22 @@ public class MyReportItemController {
             pageResult = ResultUtils.getPageResultByPage(page, pageResult);
         }
         return pageResult;
+    }
+
+    /**
+     * 拉取指定用户的指定问卷的报告列表
+     * @return
+     */
+    @RequestMapping(value = "/my-list.do",method = RequestMethod.GET)
+    @ResponseBody
+    public HttpResult myList(String surveyAnswerId) {
+        User user = accountManager.getCurUser();
+        if(user!=null){
+            List<ReportItem> reportItems = reportItemManager.findByUserId(user.getId(), surveyAnswerId);
+            return HttpResult.SUCCESS(reportItems);
+        }
+        return HttpResult.FAILURE();
+
     }
 
 
