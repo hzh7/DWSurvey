@@ -9,7 +9,6 @@ import net.diaowen.common.plugs.ipaddr.IPService;
 import net.diaowen.common.plugs.web.Token;
 import net.diaowen.common.plugs.zxing.ZxingUtil;
 import net.diaowen.common.utils.CookieUtils;
-import net.diaowen.common.utils.HttpRequestDeviceUtils;
 import net.diaowen.common.utils.NumberUtils;
 import net.diaowen.dwsurvey.common.AnswerCheckData;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
@@ -19,7 +18,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
@@ -36,7 +34,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.*;
 
 import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
@@ -131,11 +128,40 @@ public class ResponseController {
 			AnswerCheckData answerCheckData = answerCheckData(request,directory, true, entity);
 			if(!answerCheckData.isAnswerCheck()) return answerRedirect(directory,answerCheckData.getAnswerCheckCode());
 			answerSurvey(request,surveyId,entity);
+			parseUser(entity);
 			answerAfterUpData(request,response,surveyId,entity.getId());
 			return answerRedirect(directory,6, entity.getId());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return answerRedirect(directory,5);
+		}
+	}
+
+	private void parseUser(SurveyAnswer surveyAnswer) {
+		if (surveyAnswer.getUserId() != null) {
+			// 非匿名下的答卷
+			return;
+		}
+		List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+		String email = null;
+		String pwd = null;
+		for (Question question : questions) {
+			if (question.getQuTitle().contains("邮箱")) {
+				email = question.getAnFillblank().getAnswer();
+			}
+			if (question.getQuTitle().equals("身份证号")) {
+				String idCard = question.getAnFillblank().getAnswer();
+				if (idCard.length() != 18) {
+					return;
+				}
+				pwd = idCard.substring(idCard.length()-6);  // 身份证号后6位作为默认密码
+			}
+		}
+		// 匿名下的答卷根据问卷信息回填答卷用户id
+		User user = accountManager.newTempUser(email, pwd);
+		if (user != null) {
+			surveyAnswer.setUserId(user.getId());
+			surveyAnswerManager.save(surveyAnswer);
 		}
 	}
 
