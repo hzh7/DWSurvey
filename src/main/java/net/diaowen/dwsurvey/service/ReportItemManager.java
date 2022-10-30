@@ -35,7 +35,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	 * 新增了一份答卷时，触发问卷对应所有报告的生成
 	 */
 	public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception;
-	public ReportItem generatePdfReport(ReportItem reportItem);
+	public ReportItem generatePdfReport(ReportItem reportItem) throws Exception;
 
 	/**
 	 * 初始化问卷的报告,用于当新配置了报告历史报告未生成情况

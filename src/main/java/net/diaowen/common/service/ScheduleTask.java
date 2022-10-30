@@ -51,7 +51,11 @@ public class ScheduleTask {
             // 拿到初始化的报告进行生成pdf
             List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);
             for (ReportItem reportItem : reportItems) {
-                reportItemManager.generatePdfReport(reportItem);
+                try {
+                    reportItemManager.generatePdfReport(reportItem);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
                 logger.info("generatePdfReport for reportItem {}", reportItem.getId());
             }
         }

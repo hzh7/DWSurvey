@@ -136,7 +136,11 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public ReportItem generatePdfReport(ReportItem reportItem) {
+    public ReportItem generatePdfReport(ReportItem reportItem) throws Exception {
+        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING, reportItem.getGenerateStatus()) == 0) {
+            throw new Exception("更新状态失败");
+        }
+
         String reportId = reportItem.getReportId();
         String surveyAnswerId = reportItem.getSurveyAnswerId();
         // 报告量表、维度
@@ -269,8 +273,17 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         // 把构建的reportData来生成报告
         System.out.println("reportData: " + reportData);
         JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(reportData));
-        String pdfPath = postGeneratePdf(jsonObject);
+        String pdfPath;
+        try {
+            pdfPath = postGeneratePdf(jsonObject);
+        } catch (Exception e) {
+            reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_FAILED);
+            throw new RuntimeException(e);
+        }
         reportItem.setPdfAddr(pdfPath);
+        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_SUCCESS, REPORT_ITEM_STATUS_GENERATING) == 0) {
+            throw new Exception("更新状态失败");
+        }
         reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
         reportItemDao.save(reportItem);
         return reportItem;
@@ -340,7 +353,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return newReportItem;
     }
 
-    private String postGeneratePdf(JSONObject json) {
+    private String postGeneratePdf(JSONObject json) throws Exception  {
         String url = "http://localhost:8082/generate_pdf";
         String s = HttpRequest.sendPost(url, json);
         System.out.println(s);

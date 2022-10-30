@@ -13,15 +13,15 @@ public class CommonStatic {
     public static String PROJECT_DEV = "DEV";
 
     // 报告状态
-    public static Integer REPORT_STATUS_EDIT = 1;  // 编辑中
-    public static Integer REPORT_STATUS_ACTIVATED = 2;  // 激活中
-    public static Integer REPORT_STATUS_EFFECTIVE = 3;  // 生效中
-    public static Integer REPORT_STATUS_DISABLED = 4;  // 不可用
+    public static Integer REPORT_STATUS_EDIT = 0;  // 编辑中
+    public static Integer REPORT_STATUS_ACTIVATED = 1;  // 激活中
+    public static Integer REPORT_STATUS_EFFECTIVE = 2;  // 生效中
+    public static Integer REPORT_STATUS_DISABLED = 3;  // 不可用
 
     public static Integer REPORT_ITEM_STATUS_INIT = 0;  // 初始化
-    public static Integer REPORT_ITEM_STATUS_GENERATING = 2;  // 生成中
-    public static Integer REPORT_ITEM_STATUS_SUCCESS = 3;  // 生成完成
-    public static Integer REPORT_ITEM_STATUS_FAILED = 4;  // 生成失败
+    public static Integer REPORT_ITEM_STATUS_GENERATING = 1;  // 生成中
+    public static Integer REPORT_ITEM_STATUS_SUCCESS = 2;  // 生成完成
+    public static Integer REPORT_ITEM_STATUS_FAILED = 3;  // 生成失败
 
 
     public static List<String> PRIMARY_SCHOOL = Arrays.asList("一年级", "二年级", "三年级", "四年级", "五年级");  // 小学

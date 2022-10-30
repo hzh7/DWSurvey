@@ -18,4 +18,6 @@ public interface ReportItemDao extends BaseDao<ReportItem, String> {
 
     public ReportItem findByReportIdAndSurveyAnswerId(String reportId, String surveyAnswerId);
     public List<ReportItem> findByReportId(String reportId);
+    public int updateStatue(String Id, Integer newStatus, Integer oldStatus);
+    public int updateStatue(String Id, Integer newStatus);
 }
