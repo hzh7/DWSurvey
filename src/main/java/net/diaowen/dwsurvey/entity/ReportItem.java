@@ -4,6 +4,7 @@ import net.diaowen.common.base.entity.IdEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.util.Date;
 
 /**
@@ -16,6 +17,7 @@ public class ReportItem  extends IdEntity {
     private String sid;
     private String surveyAnswerId;
     private String reportId;
+    private String reportName;
     private String pdfAddr;
     private Date createDate;
     private String userId;
@@ -116,6 +118,15 @@ public class ReportItem  extends IdEntity {
 
     public void setGenerateMsg(String generateMsg) {
         this.generateMsg = generateMsg;
+    }
+
+    @Transient
+    public String getReportName() {
+        return reportName;
+    }
+
+    public void setReportName(String reportName) {
+        this.reportName = reportName;
     }
 
     @Override

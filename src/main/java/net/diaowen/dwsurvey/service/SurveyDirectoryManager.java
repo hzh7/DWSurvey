@@ -76,6 +76,7 @@ public interface SurveyDirectoryManager extends BaseService<SurveyDirectory, Str
 	public List<SurveyDirectory> findByIndex();
 
 	public List<SurveyDirectory> findByT1();
+	public List<SurveyDirectory> findByIds(List<String> ids);
 
 	public void saveByAdmin(SurveyDirectory t);
 

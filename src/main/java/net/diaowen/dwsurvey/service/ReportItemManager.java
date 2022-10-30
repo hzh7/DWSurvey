@@ -21,6 +21,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	public void saveReport(ReportItem entity);
 
 	public Page<ReportItem> findPage(Page<ReportItem> page, String reportId, String userName);
+	public List<ReportItem> findByUserId(String userId, String surveyAnswerId);
 
 	public List<SurveyDirectory> findByIndex();
 

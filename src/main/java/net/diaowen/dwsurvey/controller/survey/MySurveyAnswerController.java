@@ -67,6 +67,22 @@ public class MySurveyAnswerController {
 
     }
 
+    /**
+     * 获取用户的所有答卷列表（不分问卷id）
+     * @return
+     */
+    @RequestMapping(value = "/my-list.do",method = RequestMethod.GET)
+    @ResponseBody
+    public PageResult mySurvey(PageResult<SurveyAnswer> pageResult) {
+        User user = accountManager.getCurUser();
+        if(user!=null){
+            Page page = ResultUtils.getPageByPageResult(pageResult);
+            page=surveyAnswerManager.answerPageByUserId(page, user.getId());
+            pageResult = ResultUtils.getPageResultByPage(page,pageResult);
+        }
+        return pageResult;
+    }
+
     @RequestMapping(value = "/info.do",method = RequestMethod.GET)
     @ResponseBody
     public HttpResult info(String answerId) throws Exception {
@@ -79,7 +95,8 @@ public class MySurveyAnswerController {
                 SurveyDirectory survey = surveyDirectoryManager.findUniqueBy(answer.getSurveyId());
                 User user= accountManager.getCurUser();
                 if(user!=null && survey!=null) {
-                    if(!user.getId().equals(survey.getUserId())) {
+                    // 问卷创建者 或者 答卷的回答者
+                    if(!user.getId().equals(survey.getUserId()) && !user.getId().equals(answer.getUserId())) {
                         return HttpResult.FAILURE_MSG("没有相应数据权限");
                     }
                     List<Question> questions = surveyAnswerManager.findAnswerDetail(answer);

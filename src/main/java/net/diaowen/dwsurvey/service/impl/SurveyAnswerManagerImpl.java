@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
 
@@ -64,6 +65,8 @@ public class SurveyAnswerManagerImpl extends
 	private AnUploadFileManager anUploadFileManager;
 	@Autowired
 	private SurveyDirectoryManager directoryManager;
+	@Autowired
+	private SurveyDirectoryManager surveyDirectoryManager;
 
 	@Override
 	public void setBaseDao() {
@@ -604,6 +607,23 @@ public class SurveyAnswerManagerImpl extends
 		return page;
 	}
 
+	public Page<SurveyAnswer> answerPageByUserId(Page<SurveyAnswer> page, String userId) {
+		Criterion cri1=Restrictions.eq("userId", userId);
+		Criterion cri2=Restrictions.lt("handleState", 2);
+		page.setOrderBy("endAnDate");
+		page.setOrderDir("desc");
+		page=findPage(page, cri1, cri2);
+		List<String> surveyIds = page.getResult().stream().map(SurveyAnswer::getSurveyId).collect(Collectors.toList());
+		HashMap<String, SurveyDirectory> surveyMap = new HashMap<>();
+		List<SurveyDirectory> surveys = surveyDirectoryManager.findByIds(surveyIds);
+		surveys.forEach(x-> surveyMap.put(x.getId(), x));
+		page.getResult().forEach(x -> {
+			SurveyDirectory surveyDirectory = new SurveyDirectory();
+			surveyDirectory.setSurveyName(surveyMap.get(x.getSurveyId()).getSurveyName());
+			x.setSurveyDirectory(surveyDirectory);
+		});
+		return page;
+	}
 	public List<SurveyAnswer> answerList(String surveyId,Integer isEff) {
 		Criterion cri1=Restrictions.eq("surveyId", surveyId);
 		Criterion cri2=Restrictions.lt("handleState", 2);

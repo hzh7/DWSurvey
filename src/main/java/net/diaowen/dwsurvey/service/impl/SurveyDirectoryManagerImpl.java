@@ -547,6 +547,13 @@ public class SurveyDirectoryManagerImpl extends BaseServiceImpl<SurveyDirectory,
 	}
 
 	@Override
+	public List<SurveyDirectory> findByIds(List<String> ids) {
+	    Criterion cri1 = Restrictions.eq("visibility", 1);
+	    Criterion cri2 = Restrictions.in("id", ids);
+		return surveyDirectoryDao.find(cri1, cri2);
+	}
+
+	@Override
 	public SurveyDirectory createBySurvey(String fromBankId, String surveyName,
 										  String tag) {//new
 		SurveyDirectory surveyDirectory = buildCopyObj(fromBankId, surveyName,
