@@ -14,7 +14,6 @@ import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -229,7 +228,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         // 人数相关的统计信息
         Map<String, Integer> statisticsMap = new HashMap<>();
-        statisticsMap.put("grade_range_uv", 0);  // todo
+        statisticsMap.put("grade_range_uv", (int) getGradeRangeUv(allSurveyAnswers, gradeQuId, gradeQuId));
         String finalGradeQuId = gradeQuId;
         statisticsMap.put("same_grade_uv",  (int) allSurveyAnswers.stream().filter(
                 x -> {
@@ -275,6 +274,28 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
         reportItemDao.save(reportItem);
         return reportItem;
+    }
+
+    /**
+     * 统计同年级段的人数
+     */
+    private long getGradeRangeUv(List<SurveyAnswer> allSurveyAnswers, String gradeQuId, String grade) {
+        List<String> targetGradeRange;
+        if (PRIMARY_SCHOOL.contains(grade)) {
+            targetGradeRange = PRIMARY_SCHOOL;
+        } else if (JUNIOR_HIGH_SCHOOL.contains(grade)) {
+            targetGradeRange = JUNIOR_HIGH_SCHOOL;
+        } else {
+            targetGradeRange = HIGH_SCHOOL;
+        }
+        List<String> finalTargetGradeRange = targetGradeRange;
+        return allSurveyAnswers.stream().filter(
+                x -> {
+                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    return finalTargetGradeRange.contains(theQuAnswerInfo.get(gradeQuId).get("answer").toString());
+                }
+        ).count();
+
     }
 
     @Override
