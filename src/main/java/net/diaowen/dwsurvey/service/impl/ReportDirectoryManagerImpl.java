@@ -32,22 +32,6 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
         this.baseDao = reportDirectoryDao;
     }
 
-    @Transactional
-    @Override
-    public void save(ReportDirectory t) {
-        User user = accountManager.getCurUser();
-        String userId=t.getUserId();
-        String id=t.getId();
-        if(id==null){
-            t.setUserId(user.getId());
-            userId=t.getUserId();
-        }
-        if(userId!=null && userId.equals(user.getId())){
-            t.setCreateDate(new Date());
-            reportDirectoryDao.save(t);
-        }
-    }
-
     public ReportDirectory getReport(String id) {
         if(id==null || "".equals(id)){
             return new ReportDirectory();
@@ -91,22 +75,22 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     }
 
 
-    @Transactional
-    @Override
-    public void saveBaseUp(ReportDirectory t) {
-        //判断有无，有则更新
-        ReportDirectory reportDirectory = findById(t.getId());
-        if(reportDirectory!=null){
-
-            reportDirectory.setReportName(t.getReportName());
-            reportDirectory.setReportNum(t.getReportNum());
-            reportDirectory.setReportState(t.getReportState());
-            reportDirectory.setUserId(t.getUserId());
-            reportDirectory.setVisibility(t.getVisibility());
-            super.save(reportDirectory);
-        }
-
-    }
+//    @Transactional
+//    @Override
+//    public void saveBaseUp(ReportDirectory t) {
+//        //判断有无，有则更新
+//        ReportDirectory reportDirectory = findById(t.getId());
+//        if(reportDirectory!=null){
+//
+//            reportDirectory.setReportName(t.getReportName());
+//            reportDirectory.setReportNum(t.getReportNum());
+//            reportDirectory.setReportState(t.getReportState());
+//            reportDirectory.setUserId(t.getUserId());
+//            reportDirectory.setVisibility(t.getVisibility());
+//            super.save(reportDirectory);
+//        }
+//
+//    }
 
     @Transactional
     @Override

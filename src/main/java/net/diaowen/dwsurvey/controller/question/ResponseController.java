@@ -10,6 +10,7 @@ import net.diaowen.common.plugs.web.Token;
 import net.diaowen.common.plugs.zxing.ZxingUtil;
 import net.diaowen.common.utils.CookieUtils;
 import net.diaowen.common.utils.NumberUtils;
+import net.diaowen.common.utils.parsehtml.HtmlUtil;
 import net.diaowen.dwsurvey.common.AnswerCheckData;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.entity.*;
@@ -36,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
 
 /**
  * 答卷 action
@@ -106,8 +106,8 @@ public class ResponseController {
 						Integer.parseInt(quChoseMap.get(key).get("type")), 1);
 				Question targetQu = quIds.stream().filter(x -> x.getId().equals(key)).findFirst().get();
 				if (targetQu != null && targetQu.getQuTitle()!=null) {
-					reportQuestion.setQuTitle(matcherText(targetQu.getQuTitle()));  // 报告题附上问卷原题的标题，减少后续使用查询
-					reportQuestion.setReportQuTitle(matcherText(targetQu.getQuTitle()));
+					reportQuestion.setQuTitle(HtmlUtil.removeTagFromText(targetQu.getQuTitle()));  // 报告题附上问卷原题的标题，减少后续使用查询
+					reportQuestion.setReportQuTitle(HtmlUtil.removeTagFromText(targetQu.getQuTitle()));
 				}
 				reportQuestionManager.saveBaseUp(reportQuestion);
 			}
@@ -140,7 +140,7 @@ public class ResponseController {
 
 	private void parseUser(SurveyAnswer surveyAnswer) {
 		if (surveyAnswer.getUserId() != null) {
-			// 非匿名下的答卷
+			// 非匿名下的答卷  todo
 			return;
 		}
 		List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
@@ -322,6 +322,10 @@ public class ResponseController {
 		Date bgAnTime = (Date)request.getSession().getAttribute(bgTimeAttrName);
 		entity.setBgAnDate(bgAnTime);
 		entity.setEndAnDate(new Date());
+		User curUser = accountManager.getCurUser();
+		if (curUser != null) {
+			entity.setUserId(curUser.getId());
+		}
 		surveyAnswerManager.saveAnswer(entity, quMaps);
 	}
 
