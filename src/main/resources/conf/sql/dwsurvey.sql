@@ -979,8 +979,8 @@ CREATE TABLE `t_report_item` (
                                  `generate_status` int DEFAULT 0 COMMENT '报告生成状态',
                                  `generate_msg` varchar(100) DEFAULT NULL COMMENT '报告生成消息',
                                  `visibility` int(11) DEFAULT NULL,
-                                 `userName`  varchar(100) null comment '填问卷的人姓名',
                                  `generateDate` datetime DEFAULT NULL comment '报告生成时间',
+                                 `user_name`  varchar(100) null comment '填问卷的人姓名',
                                  PRIMARY KEY (`id`),
                                  KEY `user_id_index` (`user_id`),
                                  KEY `report_id_index` (`report_id`)
