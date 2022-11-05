@@ -175,6 +175,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
         // 年级 学校名称
         String gradeQuId = "";
+        String grade = "";
         String schoolQuId = "";
 
         // 处理维度题
@@ -197,7 +198,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 // 若为年级题，获取同年级下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
                     gradeQuId = question.getId();
-                    String grade = quAnswerInfo.get(question.getId()).get("answer").toString();
+                    grade = quAnswerInfo.get(question.getId()).get("answer").toString();
                     sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
                 }
                 // 若为学校名称题，获取同学校名称下答卷的所有得分列表
@@ -239,8 +240,18 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         }
 
         // 人数相关的统计信息
-        Map<String, Integer> statisticsMap = new HashMap<>();
-        statisticsMap.put("grade_range_uv", (int) getGradeRangeUv(allSurveyAnswers, gradeQuId, gradeQuId));
+        Map<String, Object> statisticsMap = new HashMap<>();
+        statisticsMap.put("grade", grade);
+        String gradeRange;
+        if (PRIMARY_SCHOOL.contains(grade)) {
+            gradeRange = "小学";
+        } else if (JUNIOR_HIGH_SCHOOL.contains(grade)) {
+            gradeRange = "初中";
+        } else {
+            gradeRange = "高中";
+        }
+        statisticsMap.put("grade_range", gradeRange);
+        statisticsMap.put("grade_range_uv", (int) getGradeRangeUv(allSurveyAnswers, gradeQuId, grade));
         String finalGradeQuId = gradeQuId;
         statisticsMap.put("same_grade_uv",  (int) allSurveyAnswers.stream().filter(
                 x -> {
@@ -273,7 +284,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         HashMap<String, Object> reportData = new HashMap<>();
         reportData.put("reportId", reportId);
         reportData.put("surveyId", report.getSurveyId());
-        reportData.put("reportItemId", report.getId());
+        reportData.put("reportItemId", reportItem.getId());
         reportData.put("dimMap", dimMap);
         reportData.put("metricMap", metricMap);
         reportData.put("statisticsMap", statisticsMap);
@@ -317,11 +328,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                     return finalTargetGradeRange.contains(theQuAnswerInfo.get(gradeQuId).get("answer").toString());
                 }
         ).count();
-
     }
 
     @Override
-    public void initReportItem(String reportId) {
+    public void initReportItem(String reportId, Boolean rebuild) {
         // 报告
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
         // 当前报告设定的问卷的所有答卷
@@ -340,10 +350,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             newReportItem.setUserId(surveyAnswer.getUserId());
             User user = accountManager.getUser(surveyAnswer.getUserId());
             newReportItem.setUserName(user.getName());
+            newReportItem.setGenerateDate(null);
+            if (rebuild) {
+                // 是否重新生成
+                newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
+            }
             reportItemDao.save(newReportItem);
         }
-        // 更新报告的数量
-        updateReportNum(report);
+//         更新报告的数量
+//        updateReportNum(report);
     }
 
     @Override
@@ -367,18 +382,26 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
         reportItemDao.save(newReportItem);
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
-        updateReportNum(report);
+//        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+//        updateReportNum(report);
         return newReportItem;
     }
 
+//    /**
+//     * 更新报告的数量
+//     */
+//    private void updateReportNum(ReportDirectory report) {
+//        List<ReportItem> byReportId = reportItemDao.findByReportId(report.getId());
+//        report.setReportNum(byReportId.size());
+//        reportDirectoryManager.save(report);
+//    }
     /**
      * 更新报告的数量
      */
-    private void updateReportNum(ReportDirectory report) {
+    @Override
+    public int getReportItemNum(ReportDirectory report) {
         List<ReportItem> byReportId = reportItemDao.findByReportId(report.getId());
-        report.setReportNum(byReportId.size());
-        reportDirectoryManager.save(report);
+        return byReportId.size();
     }
 
     private String postGeneratePdf(JSONObject json) throws Exception  {
