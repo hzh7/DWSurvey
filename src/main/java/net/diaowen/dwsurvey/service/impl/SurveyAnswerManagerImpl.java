@@ -12,6 +12,7 @@ import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.dao.SurveyAnswerDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
+import org.apache.logging.log4j.util.Strings;
 import org.aspectj.util.FileUtil;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -25,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl.matcherText;
 
 
 /**
@@ -607,7 +607,7 @@ public class SurveyAnswerManagerImpl extends
 		return page;
 	}
 
-	public Page<SurveyAnswer> answerPageByUserId(Page<SurveyAnswer> page, String userId) {
+	public Page<SurveyAnswer> answerPageByUserId(Page<SurveyAnswer> page, String userId, String surveyName) {
 		Criterion cri1=Restrictions.eq("userId", userId);
 		Criterion cri2=Restrictions.lt("handleState", 2);
 		page.setOrderBy("endAnDate");
@@ -617,13 +617,16 @@ public class SurveyAnswerManagerImpl extends
 		HashMap<String, SurveyDirectory> surveyMap = new HashMap<>();
 		List<SurveyDirectory> surveys = surveyDirectoryManager.findByIds(surveyIds);
 		surveys.forEach(x-> surveyMap.put(x.getId(), x));
-		page.getResult()
-				.stream().filter(x -> surveyMap.containsKey(x.getSurveyId()))  // 要过滤已经被删除的问卷
+		page.getResult().stream()
+				.filter(x -> surveyMap.containsKey(x.getSurveyId()))  // 要过滤已经被删除的问卷
 				.forEach(x -> {
 					SurveyDirectory surveyDirectory = new SurveyDirectory();
 					surveyDirectory.setSurveyName(surveyMap.get(x.getSurveyId()).getSurveyName());
 					x.setSurveyDirectory(surveyDirectory);
 				});
+		if (!Strings.isEmpty(surveyName)) {
+			page.setResult(page.getResult().stream().filter(x-> x.getSurveyDirectory().getSurveyName().contains(surveyName)).collect(Collectors.toList()));
+		}
 		return page;
 	}
 	public List<SurveyAnswer> answerList(String surveyId,Integer isEff) {
@@ -804,21 +807,21 @@ public class SurveyAnswerManagerImpl extends
 	private HashMap<String, Object> getQuestionAnswer(Question question) {
 		HashMap<String, Object> result = new HashMap<>();
 		if (question.getQuType().equals(QuType.FILLBLANK)) {
-			result.put("title", question.getQuTitle());
+			result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
 			result.put("answer", question.getAnFillblank().getAnswer());
 		}
 		if (question.getQuType().equals(QuType.SCORE)) {
 			List<AnScore> scores = question.getAnScores();
 			int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
-			result.put("title", matcherText(question.getQuTitle()));
+			result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
 			result.put("answer", (float)sum/scores.size());
 		}
 		if (question.getQuType().equals(QuType.RADIO)) {
 			String quItemId = question.getAnRadio().getQuItemId();
 			QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
 			assert quRadio != null;
-			result.put("title", question.getQuTitle());
-			result.put("answer", quRadio.getOptionName());
+			result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
+			result.put("answer", HtmlUtil.removeTagFromText(quRadio.getOptionName()));
 		}
 		// todo 其他题型
 		return result;

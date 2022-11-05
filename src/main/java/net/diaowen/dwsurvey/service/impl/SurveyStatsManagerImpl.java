@@ -4,11 +4,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import net.diaowen.common.QuType;
+import net.diaowen.common.utils.parsehtml.HtmlUtil;
 import net.diaowen.dwsurvey.dao.SurveyStatsDao;
-import net.diaowen.dwsurvey.entity.DataCross;
-import net.diaowen.dwsurvey.entity.Question;
-import net.diaowen.dwsurvey.entity.SurveyDirectory;
-import net.diaowen.dwsurvey.entity.SurveyStats;
+import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
 import net.sf.json.JSONArray;
 
@@ -127,6 +125,9 @@ public class SurveyStatsManagerImpl extends
 				anYesnoManager.findGroupStats(question);
 			} else if (QuType.RADIO == quType || QuType.COMPRADIO == quType) {// 单选
 				anRadioManager.findGroupStats(question);
+				for (QuRadio quRadio : question.getQuRadios()) {
+					quRadio.setOptionName(HtmlUtil.removeTagFromText(quRadio.getOptionName()));
+				}
 			} else if (QuType.CHECKBOX == quType
 					|| QuType.COMPCHECKBOX == quType) {// 多选 复合多选
 				anCheckboxManager.findGroupStats(question);
@@ -140,11 +141,15 @@ public class SurveyStatsManagerImpl extends
 				anEnumquManager.findGroupStats(question);
 			} else if (QuType.SCORE == quType) {// 评分题
 				anScoreManager.findGroupStats(question);
+				for (QuScore quScore : question.getQuScores()) {
+					quScore.setOptionName(HtmlUtil.removeTagFromText(quScore.getOptionName()));
+				}
 			} else if (QuType.ORDERQU == quType) {
 				anOrderManager.findGroupStats(question);
 			} else if (QuType.UPLOADFILE == quType) {
 				anUploadFileManager.findGroupStats(question);
 			}
+			question.setQuTitle(HtmlUtil.removeTagFromText(question.getQuTitle()));
 		}
 
 		return questions;

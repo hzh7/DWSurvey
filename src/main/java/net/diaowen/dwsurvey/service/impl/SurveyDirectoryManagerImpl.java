@@ -614,7 +614,7 @@ public class SurveyDirectoryManagerImpl extends BaseServiceImpl<SurveyDirectory,
 	public void devCheck(List<Question> questions) throws Exception {
 		List<String> quTitleList = new ArrayList<>();
 		for (Question question : questions) {
-			quTitleList.add(question.getQuTitle());
+			quTitleList.add(HtmlUtil.removeTagFromText(question.getQuTitle()));
 		}
 		for (String q : SurveyQuCheck.quMust) {
 			if (!quTitleList.contains(q)) {

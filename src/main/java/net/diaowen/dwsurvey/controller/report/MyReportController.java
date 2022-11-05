@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
 import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_SUCCESS;
+import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_STATUS_EDIT;
 
 @Controller
 @RequestMapping("/api/dwsurvey/app/report")
@@ -56,16 +58,17 @@ public class MyReportController {
 
 
     /**
-     * 拉取问卷列表
+     * 配置报告生成的最小样本量
      * @return
      */
-    @RequestMapping(value = "/minSampleSize.do",method = RequestMethod.POST)
+    @RequestMapping(value = "/minSampleSizeAndStatue.do",method = RequestMethod.POST)
     @ResponseBody
-    public HttpResult minSampleSize(String reportId, Integer minSampleSize) {
+    public HttpResult minSampleSize(String reportId, Integer minSampleSize, Integer reportStatue) {
         User user = accountManager.getCurUser();
         if(user!=null){
             ReportDirectory reportDirectory = reportDirectoryManager.get(reportId);
             reportDirectory.setMinSampleSize(minSampleSize);
+            reportDirectory.setReportState(reportStatue);
             reportDirectoryManager.save(reportDirectory);
             return HttpResult.SUCCESS();
         }
@@ -81,6 +84,10 @@ public class MyReportController {
     public HttpResult add(@RequestBody ReportDirectory reportDirectory) {
         try{
             reportDirectory.setReportNameText(reportDirectory.getReportName());
+            reportDirectory.setReportState(REPORT_STATUS_EDIT);
+            User user = accountManager.getCurUser();
+            reportDirectory.setUserId(user.getId());
+            reportDirectory.setCreateDate(new Date());
             reportDirectoryManager.save(reportDirectory);
             return HttpResult.SUCCESS(reportDirectory);
         }catch (Exception e){

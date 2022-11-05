@@ -3,10 +3,12 @@ package net.diaowen.dwsurvey.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
+import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.HttpRequest;
+import net.diaowen.common.utils.parsehtml.HtmlUtil;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
@@ -76,7 +78,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     public List<ReportItem> findByUserId(String userId, String surveyAnswerId) {
         List<ReportItem> reportItems = null;
         Criterion c1 = Restrictions.eq("userId", userId);
-        if (Strings.isEmpty(surveyAnswerId)) {
+        if (!Strings.isEmpty(surveyAnswerId)) {
             Criterion c2 = Restrictions.eq("surveyAnswerId", surveyAnswerId);
             reportItems = reportItemDao.find(c1, c2);
         }else {
@@ -124,15 +126,20 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         String surveyId = surveyAnswer.getSurveyId();
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findBySurveyId(surveyId);
         for (ReportDirectory reportDirectory : reportDirectories) {
-            // 若报告是激活中（样本量未达到预设值），仅初始化报告
-            if (reportDirectory.getReportState().equals(REPORT_STATUS_ACTIVATED)) {
-                initReportItem(reportDirectory.getId(), surveyAnswer.getId());
-            }
-            // 若报告是生效中，初始化报告并生成
-            if (reportDirectory.getReportState().equals(REPORT_STATUS_EFFECTIVE)) {
-                initAndGeneratePdfReport(reportDirectory.getId(), surveyAnswer.getId());
-            }
+            // 方案一 仅初始化 异步生成报告
+            initReportItem(reportDirectory.getId(), surveyAnswer.getId());
+
+            // 方案二 根据状态同步生成报告
+//            // 若报告是激活中（样本量未达到预设值），仅初始化报告
+//            if (reportDirectory.getReportState().equals(REPORT_STATUS_ACTIVATED)) {
+//                initReportItem(reportDirectory.getId(), surveyAnswer.getId());
+//            }
+//            // 若报告是生效中，初始化报告并生成
+//            if (reportDirectory.getReportState().equals(REPORT_STATUS_EFFECTIVE)) {
+//                initAndGeneratePdfReport(reportDirectory.getId(), surveyAnswer.getId());
+//            }
         }
+
     }
 
     @Override
@@ -166,8 +173,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         Map<String, List<Double>> sameSchoolScoreList = new HashMap<>();
         // 全体答卷的量表题得分
         Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
-        // 姓名 年级 学校名称
-        String userName = "";
+        // 年级 学校名称
         String gradeQuId = "";
         String schoolQuId = "";
 
@@ -177,15 +183,17 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             if (reportQuestion != null && reportQuestion.getReportQuType().equals(0)) {
                 // 维度信息题
                 Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
-                HashMap<String, Object> quAnswerMap = new HashMap<>() ;
-                quAnswerMap.put("key", stringObjectMap.get("title"));
+                HashMap<String, Object> quAnswerMap = new HashMap<>();
+                String title = stringObjectMap.get("title").toString();
+                if (title.equals("我的成绩在班级里位居")){  // 两个补丁：问卷题目与报告展示略不同
+                    title = "班级成绩";
+                }
+                else if (Arrays.asList("我的成绩在全校里位居", "我的成绩在年级里位居").contains(title)){
+                    title = "年级成绩";
+                }
+                quAnswerMap.put("key", title);
                 quAnswerMap.put("value", stringObjectMap.get("answer"));
                 dimMap.add(quAnswerMap);
-                // 若为姓名题，填充姓名值
-                if (quAnswerInfo.get(question.getId()).get("title").equals("姓名")) {
-                    userName = quAnswerInfo.get(question.getId()).get("answer").toString();
-                    reportItem.setUserName(userName);
-                }
                 // 若为年级题，获取同年级下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
                     gradeQuId = question.getId();
@@ -285,6 +293,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             throw new Exception("更新状态失败");
         }
         reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
+        reportItem.setGenerateDate(new Date());
         reportItemDao.save(reportItem);
         return reportItem;
     }
@@ -326,13 +335,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 newReportItem.setCreateDate(new Date());
                 newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
                 newReportItem.setSurveyAnswerId(surveyAnswer.getId());
-                reportItemDao.save(newReportItem);
             }
+            // 解析答卷的用户信息
+            newReportItem.setUserId(surveyAnswer.getUserId());
+            User user = accountManager.getUser(surveyAnswer.getUserId());
+            newReportItem.setUserName(user.getName());
+            reportItemDao.save(newReportItem);
         }
         // 更新报告的数量
-        List<ReportItem> byReportId = reportItemDao.findByReportId(reportId);
-        report.setReportNum(byReportId.size());
-        reportDirectoryManager.save(report);
+        updateReportNum(report);
     }
 
     @Override
@@ -348,9 +359,26 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             newReportItem.setCreateDate(new Date());
             newReportItem.setSurveyAnswerId(surveyAnswerId);
         }
+        // 解析答卷的用户信息
+        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+        newReportItem.setUserId(surveyAnswer.getUserId());
+        User user = accountManager.getUser(surveyAnswer.getUserId());
+        newReportItem.setUserName(user.getName());
+
         newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
         reportItemDao.save(newReportItem);
+        ReportDirectory report = reportDirectoryManager.getReport(reportId);
+        updateReportNum(report);
         return newReportItem;
+    }
+
+    /**
+     * 更新报告的数量
+     */
+    private void updateReportNum(ReportDirectory report) {
+        List<ReportItem> byReportId = reportItemDao.findByReportId(report.getId());
+        report.setReportNum(byReportId.size());
+        reportDirectoryManager.save(report);
     }
 
     private String postGeneratePdf(JSONObject json) throws Exception  {
@@ -408,13 +436,9 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             }
         });
         return result;
-        // quMapScoreList.keySet().forEach(x -> {
-        //     result.put(x, quMapScoreList.get(x).stream().mapToDouble(y->y).average().getAsDouble());
-        // });
-        // return result;
     }
 
-        /**
+    /**
          * 生成配置的报告的预览pdf
          * 需要构造数据，形如：
          *  {
@@ -502,7 +526,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         reportQuestions.stream().filter(x -> x.getReportQuType().equals(0))
                 .forEach(x -> {
                     HashMap<String, Object> map = new HashMap<>();
-                    map.put("key", matcherText(x.getQuTitle()));
+                    map.put("key", HtmlUtil.removeTagFromText(x.getQuTitle()));
                     map.put("value", "xxx");
                     dimMap.add(map);
                 });
@@ -530,13 +554,14 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return scoreMap;
     }
 
-    public static String matcherText(String s) {
-        if (s == null) {
-            return "";
-        }
-        String[] split = s.split("</span></b>")[0].split(">");
-        return split[split.length - 1];
-    }
+    // fixme
+//    public static String matcherText(String s) {
+//        if (s == null) {
+//            return "";
+//        }
+//        String[] split = s.split("</span></b>")[0].split(">");
+//        return split[split.length - 1];
+//    }
 
     /**
      * 获取一份问卷中指定题目回答了相同答案的答卷列表

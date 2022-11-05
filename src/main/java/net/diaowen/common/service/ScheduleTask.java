@@ -14,11 +14,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_INIT;
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_STATUS_ACTIVATED;
+import static net.diaowen.dwsurvey.common.CommonStatic.*;
 
 @Configuration      //1.主要用于标记配置类，兼备Component的效果。
 @EnableScheduling   // 2.开启定时任务
@@ -34,7 +34,11 @@ public class ScheduleTask {
     //3.添加定时任务
     //或直接指定时间间隔，例如：5秒
     //@Scheduled(fixedRate=5000)
-    @Scheduled(cron = "0 */5 * * * ?")
+
+    /**
+     * 监控报告对应问卷的样本量，当样本量达到预设值，则初始化该报告
+     */
+    @Scheduled(cron = "0 */2 * * * ?")
     private void reportMonitorTasks() {
         logger.info(LocalDateTime.now() + "  执行报告监控定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_ACTIVATED);
@@ -46,6 +50,9 @@ public class ScheduleTask {
             if (surveyDirectory.getAnswerNum() != null && reportDirectory.getMinSampleSize() <= surveyDirectory.getAnswerNum()) {
                 logger.info("init reportItem for report {}", reportDirectory.getId());
                 reportItemManager.initReportItem(reportDirectory.getId());
+                // 报告状态由激活态转为生效中
+                reportDirectory.setReportState(REPORT_STATUS_EFFECTIVE);
+                reportDirectoryManager.save(reportDirectory);
             }
 
             // 拿到初始化的报告进行生成pdf
@@ -62,8 +69,26 @@ public class ScheduleTask {
         logger.info(LocalDateTime.now() + "  报告监控定时任务执行完成");
     }
 
-//    @Scheduled(cron = "0/3 * * * * ?")
-//    private void configureTasks2() {
-//        System.err.println("执行静态定时任务时间222: " + LocalDateTime.now());
-//    }
+    /**
+     * 获取初始化状态的报告项，依次生成
+     */
+    @Scheduled(cron = "0 */1 * * * ?")
+    private void configureTasks2() {
+        logger.info(LocalDateTime.now() + "  执行报告生成定时任务");
+        List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_EFFECTIVE);
+        List<String> surveyIds = reportDirectories.stream().map(ReportDirectory::getSurveyId).collect(Collectors.toList());
+        for (ReportDirectory reportDirectory : reportDirectories) {
+            // 拿到初始化的报告进行生成pdf
+            List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);
+            for (ReportItem reportItem : reportItems) {
+                try {
+                    reportItemManager.generatePdfReport(reportItem);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
+                logger.info("generatePdfReport for reportItem {}", reportItem.getId());
+            }
+        }
+        logger.info(LocalDateTime.now() + "  报告监控定时任务执行完成");
+    }
 }

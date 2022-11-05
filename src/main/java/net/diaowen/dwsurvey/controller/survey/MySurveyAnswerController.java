@@ -73,11 +73,11 @@ public class MySurveyAnswerController {
      */
     @RequestMapping(value = "/my-list.do",method = RequestMethod.GET)
     @ResponseBody
-    public PageResult mySurvey(PageResult<SurveyAnswer> pageResult) {
+    public PageResult mySurvey(PageResult<SurveyAnswer> pageResult, String surveyName) {
         User user = accountManager.getCurUser();
         if(user!=null){
             Page page = ResultUtils.getPageByPageResult(pageResult);
-            page=surveyAnswerManager.answerPageByUserId(page, user.getId());
+            page=surveyAnswerManager.answerPageByUserId(page, user.getId(), surveyName);
             pageResult = ResultUtils.getPageResultByPage(page,pageResult);
         }
         return pageResult;

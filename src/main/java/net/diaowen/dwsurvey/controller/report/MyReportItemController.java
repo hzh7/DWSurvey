@@ -16,11 +16,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Controller
@@ -96,9 +98,10 @@ public class MyReportItemController {
             return HttpResult.FAILURE("答卷与报告配置不匹配");
         }
         try {
-            return HttpResult.SUCCESS(reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId));
+            reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId);
+            return HttpResult.SUCCESS();
         } catch (Exception e) {
-            return HttpResult.SUCCESS("failed: " + e.getMessage());
+            return HttpResult.FAILURE("failed: " + e.getMessage());
         }
     }
 
@@ -117,6 +120,30 @@ public class MyReportItemController {
         }
     }
 
+
+    /**
+     * 删除一个报告项
+     */
+    @RequestMapping(value = "/delete.do",method = RequestMethod.DELETE)
+    @ResponseBody
+    public HttpResult delete(@RequestBody Map<String, String[]> map) throws Exception {
+        try{
+            if(map!=null){
+                if(map.containsKey("id")){
+                    String[] ids = map.get("id");
+                    if(ids!=null){
+                        for (String id : ids) {
+                            reportItemManager.delete(id);
+                        }
+                    }
+                }
+            }
+            return HttpResult.SUCCESS();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return HttpResult.FAILURE();
+    }
 
     /**
      * 报告的状态
