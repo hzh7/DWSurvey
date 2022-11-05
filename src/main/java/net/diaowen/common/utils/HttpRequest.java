@@ -155,11 +155,11 @@ public class HttpRequest {
                 strber.append(line);
             inStream.close();
             result = strber.toString();
-            if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                System.out.println("请求服务器成功，做相应处理");
-            } else {
-                System.out.println("请求服务端失败");
-            }
+            // if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            //     System.out.println("请求服务器成功，做相应处理");
+            // } else {
+            //     System.out.println("请求服务端失败");
+            // }
         } catch (Exception e) {
             System.out.println(("请求异常：" + e.getMessage()));
             throw new RuntimeException(e);

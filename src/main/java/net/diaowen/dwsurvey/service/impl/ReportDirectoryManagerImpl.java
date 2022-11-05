@@ -7,9 +7,11 @@ import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.dwsurvey.dao.ReportDirectoryDao;
 import net.diaowen.dwsurvey.dao.SurveyDirectoryDao;
 import net.diaowen.dwsurvey.entity.ReportDirectory;
+import net.diaowen.dwsurvey.entity.ReportItem;
 import net.diaowen.dwsurvey.entity.SurveyDetail;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
 import net.diaowen.dwsurvey.service.ReportDirectoryManager;
+import net.diaowen.dwsurvey.service.ReportItemManager;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -25,6 +27,8 @@ import java.util.List;
 public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory, String> implements ReportDirectoryManager {
     @Autowired
     private ReportDirectoryDao reportDirectoryDao;
+    @Autowired
+    ReportItemManager reportItemManager;
     @Autowired
     private AccountManager accountManager;
     @Override
@@ -56,6 +60,10 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
             page.setOrderBy("createDate");
             page.setOrderDir("desc");
             page=reportDirectoryDao.findPageList(page,criterions);
+            // 报告数量
+            for (ReportDirectory reportDirectory : page.getResult()) {
+                reportDirectory.setReportNum(reportItemManager.getReportItemNum(reportDirectory));
+            }
         }
         return page;
     }

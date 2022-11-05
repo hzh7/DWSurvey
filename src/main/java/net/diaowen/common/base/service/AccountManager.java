@@ -87,6 +87,7 @@ public class AccountManager {
 		user.setLoginName(email);
 		user.setEmail(email);
 		user.setName(name);
+		user.setStatus(2);
 		user.setShaPassword(DigestUtils.sha1Hex(pwd));
 		userDao.save(user);
 		if (shiroRealm != null) {

@@ -2,6 +2,7 @@ package net.diaowen.dwsurvey.service;
 
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
+import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.ReportItem;
 import net.diaowen.dwsurvey.entity.SurveyAnswer;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
@@ -40,7 +41,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	/**
 	 * 初始化问卷的报告,用于当新配置了报告历史报告未生成情况
 	 */
-	public void initReportItem(String reportId);
+	public void initReportItem(String reportId, Boolean rebuild);
 
 	public ReportItem initReportItem(String reportId, String surveyAnswerId);
 
@@ -51,5 +52,11 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	public boolean generatePreviewPdfReport(String reportId) throws Exception;
 
 	public List<SurveyAnswer> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer);
+
+	/**
+	 * 获取配置报告下的当前报告数量
+	 * @param report
+	 */
+	public int getReportItemNum(ReportDirectory report);
 
 }

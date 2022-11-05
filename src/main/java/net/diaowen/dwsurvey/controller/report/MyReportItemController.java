@@ -111,9 +111,9 @@ public class MyReportItemController {
      */
     @RequestMapping(value = "/init.do",method = RequestMethod.GET)
     @ResponseBody
-    public HttpResult init(String reportId){
+    public HttpResult init(String reportId, Boolean rebuild){
         try {
-            reportItemManager.initReportItem(reportId);
+            reportItemManager.initReportItem(reportId, rebuild);
             return HttpResult.SUCCESS();
         } catch (Exception e) {
             return HttpResult.SUCCESS("failed: " + e.getMessage());

@@ -38,7 +38,7 @@ public class ScheduleTask {
     /**
      * 监控报告对应问卷的样本量，当样本量达到预设值，则初始化该报告
      */
-    @Scheduled(cron = "0 */2 * * * ?")
+    @Scheduled(cron = "0 */15 * * * ?")
     private void reportMonitorTasks() {
         logger.info(LocalDateTime.now() + "  执行报告监控定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_ACTIVATED);
@@ -49,7 +49,7 @@ public class ScheduleTask {
             // 若当前问卷数达到配置的最小样本量，则初始化报告
             if (surveyDirectory.getAnswerNum() != null && reportDirectory.getMinSampleSize() <= surveyDirectory.getAnswerNum()) {
                 logger.info("init reportItem for report {}", reportDirectory.getId());
-                reportItemManager.initReportItem(reportDirectory.getId());
+                reportItemManager.initReportItem(reportDirectory.getId(), false);
                 // 报告状态由激活态转为生效中
                 reportDirectory.setReportState(REPORT_STATUS_EFFECTIVE);
                 reportDirectoryManager.save(reportDirectory);
@@ -72,11 +72,10 @@ public class ScheduleTask {
     /**
      * 获取初始化状态的报告项，依次生成
      */
-    @Scheduled(cron = "0 */1 * * * ?")
+    @Scheduled(cron = "0 */10 * * * ?")
     private void configureTasks2() {
         logger.info(LocalDateTime.now() + "  执行报告生成定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_EFFECTIVE);
-        List<String> surveyIds = reportDirectories.stream().map(ReportDirectory::getSurveyId).collect(Collectors.toList());
         for (ReportDirectory reportDirectory : reportDirectories) {
             // 拿到初始化的报告进行生成pdf
             List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);

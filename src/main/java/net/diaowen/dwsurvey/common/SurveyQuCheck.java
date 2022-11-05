@@ -5,5 +5,5 @@ import java.util.List;
 
 public class SurveyQuCheck {
 
-    public static List<String> quMust = Arrays.asList("姓名", "年级",  "邮箱", "身份证号", "学校名称", "性别");
+    public static List<String> quMust = Arrays.asList("姓名", "年级",  "邮箱", "身份证号", "学校名称");
 }
