@@ -322,10 +322,6 @@ public class ResponseController {
 		Date bgAnTime = (Date)request.getSession().getAttribute(bgTimeAttrName);
 		entity.setBgAnDate(bgAnTime);
 		entity.setEndAnDate(new Date());
-		User curUser = accountManager.getCurUser();
-		if (curUser != null) {
-			entity.setUserId(curUser.getId());
-		}
 		surveyAnswerManager.saveAnswer(entity, quMaps);
 	}
 

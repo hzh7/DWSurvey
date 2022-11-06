@@ -8,6 +8,7 @@ import net.diaowen.common.plugs.httpclient.ResultUtils;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.utils.UserAgentUtils;
 import net.diaowen.common.utils.ZipUtil;
+import net.diaowen.common.utils.parsehtml.HtmlUtil;
 import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.entity.AnUplodFile;
 import net.diaowen.dwsurvey.entity.Question;
@@ -100,6 +101,7 @@ public class MySurveyAnswerController {
                         return HttpResult.FAILURE_MSG("没有相应数据权限");
                     }
                     List<Question> questions = surveyAnswerManager.findAnswerDetail(answer);
+                    survey.setSurveyName(HtmlUtil.removeTagFromText(survey.getSurveyName()));
                     survey.setQuestions(questions);
                     survey.setSurveyAnswer(answer);
                     return HttpResult.SUCCESS(survey);

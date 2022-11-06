@@ -1,6 +1,7 @@
 package net.diaowen.common.utils;
 
 import com.alibaba.fastjson.JSONObject;
+import net.diaowen.dwsurvey.service.impl.ReportItemManagerImpl;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
@@ -9,6 +10,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.URL;
@@ -18,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 public class HttpRequest {
+
+    private static final Logger logger = LogManager.getLogger(HttpRequest.class.getName());
+
     /**
      * 向指定URL发送GET方法的请求
      *
@@ -128,15 +134,12 @@ public class HttpRequest {
 
     /**
      * 发送post请求
-     * @param json
-     * @param URL
-     * @return
      */
     public static String sendPost(String URL, JSONObject json) {
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost post = new HttpPost(URL);
         post.setHeader("Content-Type", "application/json");
-        post.addHeader("Authorization", "Basic YWRtaW46");
+//        post.addHeader("Authorization", "Basic YWRtaW46");
         String result;
         try {
             StringEntity s = new StringEntity(json.toString(), "utf-8");
@@ -155,13 +158,8 @@ public class HttpRequest {
                 strber.append(line);
             inStream.close();
             result = strber.toString();
-            // if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-            //     System.out.println("请求服务器成功，做相应处理");
-            // } else {
-            //     System.out.println("请求服务端失败");
-            // }
         } catch (Exception e) {
-            System.out.println(("请求异常：" + e.getMessage()));
+            logger.error("请求异常：" + e.getMessage());
             throw new RuntimeException(e);
         }
         return result;

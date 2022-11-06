@@ -25,6 +25,8 @@ public class DWSurveyConfig {
     public static String DWSURVEY_WEB_INFO_SITE_MAIL = null;
     public static String DWSURVEY_WEB_INFO_SITE_PHONE = null;
 
+    public static String DWSURVEY_PDF_GENERATE_SERVER_URL = null;
+
 
     @Value("${dwsurvey.web.file-path}")
     public void setWebFilePath(String webFilePath) {
@@ -103,4 +105,7 @@ public class DWSurveyConfig {
 
     @Value("${dwsurvey.web.info.site-phone}")
     public void setDwsurveyWebInfoSitePhone(String dwsurveyWebInfoSitePhone) { DWSURVEY_WEB_INFO_SITE_PHONE = dwsurveyWebInfoSitePhone; }
+
+    @Value("${dwsurvey.web.pdf-server-url}")
+    public void setDwsurveyPdfGenerateServerUrl(String pdfGenerateServerUrl) { DWSURVEY_PDF_GENERATE_SERVER_URL = pdfGenerateServerUrl; }
 }

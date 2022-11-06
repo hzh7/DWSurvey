@@ -10,16 +10,18 @@ dwsurvey:
     site-url: http://localhost:8081
     # 资源访问地址，便于存储模式的切换，目前可以保持与site-url一样
     resource-url: http://localhost:8080
+    # 生成pdf的服务地址
+    pdf-server-url: http://localhost:8082
     # 站点信息配置，会出现在底部footer区
     info:
       # 站点名称
-      site-name: 调问网
+      site-name: xxx网
       # 站点名称，对应的URL地址
       site-url: http://www.diaowen.net
       # 站点备案号
-      site-icp: 京ICP备13050030号-3
+      site-icp: 待备案
       # 站点联系人邮箱
-      site-mail: service@diaowen.net
+      site-mail: test@xxx.com
       # 站点联系人电话
       site-phone: 18888888888
   # 用于微信集成相关，目前社区版还没未启用。
@@ -54,11 +56,12 @@ spring:
   datasource:
     #type: com.alibaba.druid.pool.DruidDataSource
     # 连接URL
-    url: jdbc:mysql://localhost:3306/dwsurvey?useUnicode=true&characterEncoding=utf8
+#    url: jdbc:mysql://localhost:3306/dwsurvey?useUnicode=true&characterEncoding=utf8
+    url: jdbc:mysql://sh-cynosdbmysql-grp-mi91m1g2.sql.tencentcdb.com:28696/dwsurvey?useUnicode=true&characterEncoding=utf8
     # 连接账号
-    username: root
+    username: user_00
     # 连接密码
-    password: 123456
+    password: bO5oL8tA4bK4
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       initial-size: 5
