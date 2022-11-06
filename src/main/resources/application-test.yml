@@ -5,7 +5,7 @@ dwsurvey:
     static-type: static
     site-url: http://localhost:8080
     resource-url: http://localhost:8080
-    #    site-url: http://ent82.surveyform.cn
+    pdf-server-url: http://localhost:8082
     info:
       site-name: 调问网
       site-url: http://www.diaowen.net

@@ -797,7 +797,7 @@ CREATE TABLE `t_user` (
 --  Records of `t_user`
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_user` VALUES ('1', null, '2013-03-21 21:15:21', null, null, '2013-03-21 21:15:21', '1', 'service@diaowen.net', null, null, '2021-12-31 09:46:37', 'dwsurvey', '柯远', null, '1', '7c4a8d09ca3762af61e59520943dc26494f8941b', '2', '1', null, null, null, null, null, null);
+INSERT INTO `t_user` VALUES ('1', null, '2022-10-08 21:15:21', null, null, '2013-03-21 21:15:21', '1', 'service@diaowen.net', null, null, '2021-12-31 09:46:37', 'dwsurvey', 'admin', null, '1', '7c4a8d09ca3762af61e59520943dc26494f8941b', '2', '1', null, null, null, null, null, null);
 COMMIT;
 
 -- ----------------------------
@@ -815,91 +815,6 @@ CREATE TABLE `tracker` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-
-
-
-
--- ----------------------------
---  Table structure for `t_report_directory`
--- ----------------------------
-DROP TABLE IF EXISTS `t_report_directory`;
-CREATE TABLE `t_report_directory` (
-                                      `id` varchar(55) NOT NULL,
-                                      `report_name` varchar(255) DEFAULT NULL COMMENT '报告名称',
-                                      `report_name_text` varchar(255) DEFAULT NULL COMMENT '报告描述',
-                                      `survey_id` varchar(55) NOT NULL COMMENT '问卷id',
-                                      `user_id` varchar(55) DEFAULT NULL COMMENT '创建报告的用户',
-                                      `report_template_id` varchar(55) DEFAULT NULL COMMENT '报告的模板id',
-                                      `file_data_id` varchar(55) DEFAULT NULL COMMENT '文件id',
-                                      `report_num` int(11) DEFAULT NULL COMMENT '报告数量',
-                                      `create_date` datetime DEFAULT NULL,
-                                      `report_qu_num` int(11) DEFAULT NULL COMMENT '报告里选中的问卷问题数量',
-                                      `report_state` int(11) DEFAULT NULL COMMENT '报告状态：首次创建初始化0；例行更新1',
-                                      `visibility` int(11) DEFAULT NULL,
-                                      `survey_type` int(11) DEFAULT NULL,
-                                      PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
-
-
--- ----------------------------
---  Table structure for `t_report_question`
--- ----------------------------
-DROP TABLE IF EXISTS `t_report_question`;
-CREATE TABLE `t_report_question` (
-                                     `id` varchar(55) NOT NULL,
-                                     `qu_id` varchar(55) NOT NULL COMMENT '对应问题id',
-                                     `report_id` varchar(55) NOT NULL COMMENT '所属报告id',
-                                     `create_date` datetime DEFAULT NULL,
-                                     `report_qu_type` int(11) DEFAULT NULL COMMENT '题目类型：维度题、量表题',
-                                     `order_by_id` int(11) DEFAULT NULL COMMENT '排序ID',
-                                     `visibility` int(11) DEFAULT NULL,
-                                     `agv_score_grade` int(11) DEFAULT NULL COMMENT '该题年级均分',
-                                     `agv_score_school` int(11) DEFAULT NULL COMMENT '该题全校均分',
-                                     `agv_score_all` int(11) DEFAULT NULL COMMENT '该题全体均分',
-                                     `answer_num` int(11) DEFAULT NULL COMMENT '回答该题的数量',
-                                     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
-
--- ----------------------------
---  Table structure for `t_an_answer_report`
---  报告选中题目的答案所对应的报告小结，用于生成报告
--- ----------------------------
--- DROP TABLE IF EXISTS `t_an_answer_report`;
--- CREATE TABLE `t_an_answer_report` (
---     `id` varchar(55) NOT NULL,
---     `report_item_id` varchar(255) DEFAULT NULL COMMENT '所属具体报告id',
---     `answer_id` varchar(255) DEFAULT NULL COMMENT '答案id',
---     `create_date` datetime DEFAULT NULL,
---     `visibility` int(11) DEFAULT NULL,
---     `sum_score` int(11) DEFAULT NULL COMMENT '量表题生效：该大题得分汇总',
---     `score_percentile` float DEFAULT NULL COMMENT '量表题生效：该大题得分百位位',
---     PRIMARY KEY (`id`),
---     KEY `exportIndex` (`report_item_id`,`answer_id`)
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
-
--- ----------------------------
---  Table structure for `t_report_item`
---  一份具体的报告
--- ----------------------------
-DROP TABLE IF EXISTS `t_report_item`;
-CREATE TABLE `t_report_item` (
-                                 `id` varchar(55) NOT NULL,
-                                 `sid` varchar(255) DEFAULT NULL COMMENT '报告短id',
-                                 `survey_answer_id` varchar(55) NOT NULL COMMENT '对应问卷答卷id',
-                                 `report_id` varchar(55) NOT NULL COMMENT '所属的报告id',
-                                 `pdf_addr` varchar(255) DEFAULT NULL,
-                                 `create_date` datetime DEFAULT NULL,
-                                 `user_id` varchar(100) DEFAULT NULL,
-                                 `generate_status` varchar(100) DEFAULT NULL COMMENT '报告状态：生成中，生成完成，生成失败',
-                                 `generate_msg` varchar(100) DEFAULT NULL COMMENT '报告生成消息',
-                                 PRIMARY KEY (`id`),
-                                 KEY `user_id_index` (`user_id`),
-                                 KEY `report_id_index` (`report_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 
 -- ----------------------------
@@ -945,22 +860,22 @@ CREATE TABLE `t_report_question` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 
--- ----------------------------
---  Table structure for `t_an_answer_report`
---  报告选中题目的答案所对应的报告小结，用于生成报告
--- ----------------------------
-DROP TABLE IF EXISTS `t_an_answer_report`;
-CREATE TABLE `t_an_answer_report` (
-    `id` varchar(55) NOT NULL,
-    `report_item_id` varchar(255) DEFAULT NULL COMMENT '所属具体报告id',
-    `answer_id` varchar(255) DEFAULT NULL COMMENT '答案id',
-    `create_date` datetime DEFAULT NULL,
-    `visibility` int(11) DEFAULT NULL,
-    `sum_score` int(11) DEFAULT NULL COMMENT '量表题生效：该大题得分汇总',
-    `score_percentile` float DEFAULT NULL COMMENT '量表题生效：该大题得分百位位',
-    PRIMARY KEY (`id`),
-    KEY `exportIndex` (`report_item_id`,`answer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+-- -- ----------------------------
+-- --  Table structure for `t_an_answer_report`
+-- --  报告选中题目的答案所对应的报告小结，用于生成报告
+-- -- ----------------------------
+-- DROP TABLE IF EXISTS `t_an_answer_report`;
+-- CREATE TABLE `t_an_answer_report` (
+--     `id` varchar(55) NOT NULL,
+--     `report_item_id` varchar(255) DEFAULT NULL COMMENT '所属具体报告id',
+--     `answer_id` varchar(255) DEFAULT NULL COMMENT '答案id',
+--     `create_date` datetime DEFAULT NULL,
+--     `visibility` int(11) DEFAULT NULL,
+--     `sum_score` int(11) DEFAULT NULL COMMENT '量表题生效：该大题得分汇总',
+--     `score_percentile` float DEFAULT NULL COMMENT '量表题生效：该大题得分百位位',
+--     PRIMARY KEY (`id`),
+--     KEY `exportIndex` (`report_item_id`,`answer_id`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 
 -- ----------------------------
@@ -987,11 +902,9 @@ CREATE TABLE `t_report_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 
-
-
-select  *
-from t_survey_answer
-         join t_question on t_survey_answer.survey_id = t_question.belong_id
-         join t_an_radio on t_an_radio.qu_id = t_question.id
-         join t_qu_radio on t_qu_radio.qu_id = t_question.id and t_an_radio.qu_item_id = t_qu_radio.id
-where survey_id = '2fb7e1a7-faf3-48ce-bd17-0f96e62fd168' and t_question.tag = '2' and t_question.qu_title = '年级' and t_qu_radio.option_name = '三年级';
+-- select  *
+-- from t_survey_answer
+--          join t_question on t_survey_answer.survey_id = t_question.belong_id
+--          join t_an_radio on t_an_radio.qu_id = t_question.id
+--          join t_qu_radio on t_qu_radio.qu_id = t_question.id and t_an_radio.qu_item_id = t_qu_radio.id
+-- where survey_id = '2fb7e1a7-faf3-48ce-bd17-0f96e62fd168' and t_question.tag = '2' and t_question.qu_title = '年级' and t_qu_radio.option_name = '三年级';

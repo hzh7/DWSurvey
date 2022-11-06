@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
+import net.diaowen.common.dao.SuperHttpDao;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.HttpRequest;
@@ -12,6 +13,8 @@ import net.diaowen.common.utils.parsehtml.HtmlUtil;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -22,9 +25,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.diaowen.dwsurvey.common.CommonStatic.*;
+import static net.diaowen.dwsurvey.config.DWSurveyConfig.DWSURVEY_PDF_GENERATE_SERVER_URL;
 
 @Service("ReportItemManagerImpl")
 public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> implements ReportItemManager {
+
+    private static final Logger logger = LogManager.getLogger(ReportItemManagerImpl.class.getName());
+
     @Autowired
     private ReportItemDao reportItemDao;
     @Autowired
@@ -44,11 +51,6 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         this.baseDao = reportItemDao;
     }
 
-
-//    @Override
-//    public ReportItem findUniqueBy(String id) {
-//        return reportItemDao.findUniqueBy("id", id);
-//    }
 
     @Override
     public ReportItem getReportByUser(String id, String userId) {
@@ -120,7 +122,6 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return generatePdfReport(reportItem);
     }
 
-//    @Async todo 测试异步该函数
     @Override
     public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception {
         String surveyId = surveyAnswer.getSurveyId();
@@ -130,21 +131,22 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             initReportItem(reportDirectory.getId(), surveyAnswer.getId());
 
             // 方案二 根据状态同步生成报告
-//            // 若报告是激活中（样本量未达到预设值），仅初始化报告
-//            if (reportDirectory.getReportState().equals(REPORT_STATUS_ACTIVATED)) {
-//                initReportItem(reportDirectory.getId(), surveyAnswer.getId());
-//            }
-//            // 若报告是生效中，初始化报告并生成
-//            if (reportDirectory.getReportState().equals(REPORT_STATUS_EFFECTIVE)) {
-//                initAndGeneratePdfReport(reportDirectory.getId(), surveyAnswer.getId());
-//            }
+            /* 若报告是激活中（样本量未达到预设值），仅初始化报告
+            if (reportDirectory.getReportState().equals(REPORT_STATUS_ACTIVATED)) {
+                initReportItem(reportDirectory.getId(), surveyAnswer.getId());
+            }
+            // 若报告是生效中，初始化报告并生成
+            if (reportDirectory.getReportState().equals(REPORT_STATUS_EFFECTIVE)) {
+                initAndGeneratePdfReport(reportDirectory.getId(), surveyAnswer.getId());
+            }*/
         }
 
     }
 
     @Override
     public ReportItem generatePdfReport(ReportItem reportItem) throws Exception {
-        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING, reportItem.getGenerateStatus()) == 0) {
+        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING) == 0) {
+            logger.error("reportItem id: {} 更新状态失败", reportItem.getId());
             throw new Exception("更新状态失败");
         }
 
@@ -209,12 +211,6 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 }
             }
         }
-
-        // todo
-        // System.out.println("dimMap: " + dimMap);
-        // System.out.println("sameGradeScoreList: " + sameGradeScoreList);
-        // System.out.println("sameSchoolScoreList: " + sameSchoolScoreList);
-        // System.out.println("allScoreList: " + allScoreList);
 
         // 处理量表题
         for (Question question : questions) {
@@ -295,17 +291,20 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         String pdfPath;
         try {
             pdfPath = postGeneratePdf(jsonObject);
+            logger.info("reportItem id: {} pdf path {}", reportItem.getId(), pdfPath);
         } catch (Exception e) {
             reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_FAILED);
             throw new RuntimeException(e);
         }
         reportItem.setPdfAddr(pdfPath);
         if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_SUCCESS, REPORT_ITEM_STATUS_GENERATING) == 0) {
+            logger.error("reportItem id: {} 更新状态失败", reportItem.getId());
             throw new Exception("更新状态失败");
         }
         reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
         reportItem.setGenerateDate(new Date());
         reportItemDao.save(reportItem);
+        logger.info("reportItem id: {} 报告生成完成", reportItem.getId());
         return reportItem;
     }
 
@@ -347,18 +346,19 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 newReportItem.setSurveyAnswerId(surveyAnswer.getId());
             }
             // 解析答卷的用户信息
-            newReportItem.setUserId(surveyAnswer.getUserId());
-            User user = accountManager.getUser(surveyAnswer.getUserId());
-            newReportItem.setUserName(user.getName());
-            newReportItem.setGenerateDate(null);
+            if (!Strings.isEmpty(surveyAnswer.getUserId())) {
+                newReportItem.setUserId(surveyAnswer.getUserId());
+                User user = accountManager.getUser(surveyAnswer.getUserId());
+                newReportItem.setUserName(user.getName());
+            }
             if (rebuild) {
                 // 是否重新生成
                 newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
+                newReportItem.setGenerateDate(null);
             }
             reportItemDao.save(newReportItem);
+            logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
         }
-//         更新报告的数量
-//        updateReportNum(report);
     }
 
     @Override
@@ -382,19 +382,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
         reportItemDao.save(newReportItem);
-//        ReportDirectory report = reportDirectoryManager.getReport(reportId);
-//        updateReportNum(report);
+        logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
         return newReportItem;
     }
 
-//    /**
-//     * 更新报告的数量
-//     */
-//    private void updateReportNum(ReportDirectory report) {
-//        List<ReportItem> byReportId = reportItemDao.findByReportId(report.getId());
-//        report.setReportNum(byReportId.size());
-//        reportDirectoryManager.save(report);
-//    }
     /**
      * 更新报告的数量
      */
@@ -405,10 +396,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     private String postGeneratePdf(JSONObject json) throws Exception  {
-        String url = "http://localhost:8082/generate_pdf";
-        String s = HttpRequest.sendPost(url, json);
-        System.out.println(s);
-        return s;
+        String url = DWSURVEY_PDF_GENERATE_SERVER_URL + "/generate_pdf";
+        return HttpRequest.sendPost(url, json);
     }
 
     /**
@@ -576,15 +565,6 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         scoreMap.put("percentile", String.format("%.1f", (float) (Math.random() * 100)));
         return scoreMap;
     }
-
-    // fixme
-//    public static String matcherText(String s) {
-//        if (s == null) {
-//            return "";
-//        }
-//        String[] split = s.split("</span></b>")[0].split(">");
-//        return split[split.length - 1];
-//    }
 
     /**
      * 获取一份问卷中指定题目回答了相同答案的答卷列表

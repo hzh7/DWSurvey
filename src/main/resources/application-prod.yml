@@ -3,14 +3,14 @@ dwsurvey:
   web:
     file-path: diaowen/file/
     static-type: static
-    site-url: http://localhost:8080
-    resource-url: http://localhost:8080
-    #    site-url: http://ent82.surveyform.cn
+    site-url: http://101.35.108.146
+    resource-url: http://101.35.108.146
+    pdf-server-url: http://localhost:8082
     info:
-      site-name: 调问网
+      site-name: xxx网
       site-url: http://www.diaowen.net
-      site-icp: 京ICP备13050030号-3
-      site-mail: service@diaowen.net
+      site-icp: 待备案
+      site-mail: test@xxx.com
       site-phone: 18888888888
   weixin:
     app-id: xxx
@@ -36,9 +36,9 @@ spring:
 
   datasource:
     #type: com.alibaba.druid.pool.DruidDataSource
-    url: jdbc:mysql://localhost:3306/dwsurvey_21test?useUnicode=true&characterEncoding=utf8
-    username: root
-    password: 123456,.
+    url: jdbc:mysql://172.17.0.17:3306/dwsurvey?useUnicode=true&characterEncoding=utf8
+    username: xxxxxx
+    password: xxxxxx
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       initial-size: 5
