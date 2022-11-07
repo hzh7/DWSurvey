@@ -2,7 +2,10 @@ package net.diaowen.dwsurvey.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.hazelcast.logging.ILogger;
 import net.diaowen.common.QuType;
+import net.diaowen.common.base.entity.User;
+import net.diaowen.common.base.service.AccountManager;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.RunAnswerUtil;
@@ -12,6 +15,8 @@ import net.diaowen.dwsurvey.config.DWSurveyConfig;
 import net.diaowen.dwsurvey.dao.SurveyAnswerDao;
 import net.diaowen.dwsurvey.entity.*;
 import net.diaowen.dwsurvey.service.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.aspectj.util.FileUtil;
 import org.hibernate.criterion.Criterion;
@@ -38,6 +43,8 @@ import java.util.stream.Collectors;
 @Service
 public class SurveyAnswerManagerImpl extends
 		BaseServiceImpl<SurveyAnswer, String> implements SurveyAnswerManager {
+
+	private static final Logger logger = LogManager.getLogger(ReportItemManagerImpl.class.getName());
 
 	@Autowired
 	private SurveyAnswerDao surveyAnswerDao;
@@ -67,6 +74,8 @@ public class SurveyAnswerManagerImpl extends
 	private SurveyDirectoryManager directoryManager;
 	@Autowired
 	private SurveyDirectoryManager surveyDirectoryManager;
+	@Autowired
+	private AccountManager accountManager;
 
 	@Override
 	public void setBaseDao() {
@@ -799,6 +808,45 @@ public class SurveyAnswerManagerImpl extends
 	@Override
 	public List<SurveyAnswer> findBySurveyId(String surveyId) {
 		return surveyAnswerDao.findBySurveyId(surveyId);
+	}
+
+    @Override
+    public List<SurveyAnswer> findByCreateTimeAfter(Date time) {
+		return surveyAnswerDao.findByCreateTimeAfter(time);
+    }
+
+	@Override
+	public void parseUserFromSurveyAnswer(SurveyAnswer surveyAnswer) {
+		if (surveyAnswer.getUserId() != null) {
+			// 非匿名下的答卷
+			return;
+		}
+		List<Question> questions = findAnswerDetail(surveyAnswer);
+		String name = null;
+		String email = null;
+		String pwd = null;
+		for (Question question : questions) {
+			if (question.getQuTitle().contains("姓名")) {
+				name = question.getAnFillblank().getAnswer();
+			}
+			if (question.getQuTitle().contains("邮箱")) {
+				email = question.getAnFillblank().getAnswer();
+			}
+			if (question.getQuTitle().equals("身份证号")) {
+				String idCard = question.getAnFillblank().getAnswer();
+				if (idCard.length() != 18) {
+					logger.info("surveyAnswer {} idCard.length() != 18", surveyAnswer.getId());
+					return;
+				}
+				pwd = idCard.substring(idCard.length()-6);  // 身份证号后6位作为默认密码
+			}
+		}
+		// 匿名下的答卷根据问卷信息回填答卷用户id
+		User user = accountManager.newTempUser(email, pwd, name);
+		if (user != null) {
+			surveyAnswer.setUserId(user.getId());
+			save(surveyAnswer);
+		}
 	}
 
 	/**

@@ -128,7 +128,7 @@ public class ResponseController {
 			AnswerCheckData answerCheckData = answerCheckData(request,directory, true, entity);
 			if(!answerCheckData.isAnswerCheck()) return answerRedirect(directory,answerCheckData.getAnswerCheckCode());
 			answerSurvey(request,surveyId,entity);
-			parseUser(entity);
+			surveyAnswerManager.parseUserFromSurveyAnswer(entity);
 			answerAfterUpData(request,response,surveyId,entity.getId());
 			reportItemManager.initAndGenerateReportItem(entity);
 			return answerRedirect(directory,6, entity.getId());
@@ -138,37 +138,6 @@ public class ResponseController {
 		}
 	}
 
-	private void parseUser(SurveyAnswer surveyAnswer) {
-		if (surveyAnswer.getUserId() != null) {
-			// 非匿名下的答卷  todo
-			return;
-		}
-		List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
-		String name = null;
-		String email = null;
-		String pwd = null;
-		for (Question question : questions) {
-			if (question.getQuTitle().contains("姓名")) {
-				name = question.getAnFillblank().getAnswer();
-			}
-			if (question.getQuTitle().contains("邮箱")) {
-				email = question.getAnFillblank().getAnswer();
-			}
-			if (question.getQuTitle().equals("身份证号")) {
-				String idCard = question.getAnFillblank().getAnswer();
-				if (idCard.length() != 18) {
-					return;
-				}
-				pwd = idCard.substring(idCard.length()-6);  // 身份证号后6位作为默认密码
-			}
-		}
-		// 匿名下的答卷根据问卷信息回填答卷用户id
-		User user = accountManager.newTempUser(email, pwd, name);
-		if (user != null) {
-			surveyAnswer.setUserId(user.getId());
-			surveyAnswerManager.save(surveyAnswer);
-		}
-	}
 
 	public AnswerCheckData answerCheckData(HttpServletRequest request, SurveyDirectory directory,boolean isSubmit,SurveyAnswer entity) {
 		AnswerCheckData answerCheckData = new AnswerCheckData();

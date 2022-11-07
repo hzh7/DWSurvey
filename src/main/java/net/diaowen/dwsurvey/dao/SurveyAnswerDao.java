@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.dao;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -20,5 +21,7 @@ public interface SurveyAnswerDao extends BaseDao<SurveyAnswer, String>{
 	 * 指定surveyId下的所有答卷
 	 */
 	public List<SurveyAnswer> findBySurveyId(String surveyId);
+
+	public List<SurveyAnswer> findByCreateTimeAfter(Date time);
 
 }
