@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,4 +76,11 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	}
 
 	public List<SurveyAnswer> findBySurveyId(String surveyId);
+	public List<SurveyAnswer> findByCreateTimeAfter(Date time);
+
+	/**
+	 * 匿名下答卷解析问卷里的用户信息生成用户
+	 */
+	public void parseUserFromSurveyAnswer(SurveyAnswer surveyAnswer);
+
 }

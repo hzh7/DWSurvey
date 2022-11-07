@@ -485,4 +485,10 @@ public class SurveyAnswerDaoImpl extends BaseDaoImpl<SurveyAnswer, String> imple
 		return this.find(criterion1);
     }
 
+	@Override
+	public List<SurveyAnswer> findByCreateTimeAfter(Date time) {
+		Criterion c1 = Restrictions.ge("endAnDate", time);
+		return this.find(c1);
+	}
+
 }
