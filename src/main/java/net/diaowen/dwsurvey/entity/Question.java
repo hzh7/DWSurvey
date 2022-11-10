@@ -80,6 +80,13 @@ public class Question extends IdEntity{
 	private Integer answerInputWidth;
 	private Integer answerInputRow;
 
+	private Integer reportQuType;
+
+	private String reportQuTitle;
+
+	@Transient
+	private Boolean showInReport;
+
 	public String getBelongId() {
 		return belongId;
 	}
@@ -442,4 +449,27 @@ public class Question extends IdEntity{
 		this.statJson = statJson;
 	}
 
+	public Integer getReportQuType() {
+		return reportQuType;
+	}
+
+	public void setReportQuType(Integer reportQuType) {
+		this.reportQuType = reportQuType;
+	}
+
+	public String getReportQuTitle() {
+		return reportQuTitle;
+	}
+
+	public void setReportQuTitle(String reportQuTitle) {
+		this.reportQuTitle = reportQuTitle;
+	}
+
+	public Boolean getShowInReport() {
+		return showInReport;
+	}
+
+	public void setShowInReport(Boolean showInReport) {
+		this.showInReport = showInReport;
+	}
 }
