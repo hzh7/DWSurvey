@@ -29,6 +29,8 @@ public class QuScore extends IdEntity {
 	private Integer orderById;
 	// 是否显示 0不显示
 	private Integer visibility = 1;
+	// 计分方式：0 正向计分,1 反向计分
+	private Integer scoringType = 1;
 
 	public String getQuId() {
 		return quId;
@@ -89,6 +91,14 @@ public class QuScore extends IdEntity {
 
 	public void setAvgScore(float avgScore) {
 		this.avgScore = avgScore;
+	}
+
+	public Integer getScoringType() {
+		return scoringType;
+	}
+
+	public void setScoringType(Integer scoringType) {
+		this.scoringType = scoringType;
 	}
 
 }
