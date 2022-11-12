@@ -43,7 +43,7 @@ public class ScheduleTask {
     /**
      * 监控报告对应问卷的样本量，当样本量达到预设值，则初始化该报告
      */
-    @Scheduled(cron = "0 */15 * * * ?")
+    @Scheduled(cron = "0 */1 * * * ?")
     private void reportMonitorTasks() {
         logger.info(LocalDateTime.now() + "  执行报告监控定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_ACTIVATED);
@@ -61,15 +61,15 @@ public class ScheduleTask {
             }
 
             // 拿到初始化的报告进行生成pdf
-            List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);
-            for (ReportItem reportItem : reportItems) {
-                try {
-                    reportItemManager.generatePdfReport(reportItem);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
-                }
-                logger.info("generatePdfReport for reportItem {}", reportItem.getId());
-            }
+//            List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);
+//            for (ReportItem reportItem : reportItems) {
+//                try {
+//                    reportItemManager.generatePdfReport(reportItem);
+//                } catch (Exception e) {
+//                    logger.error(e.getMessage());
+//                }
+//                logger.info("generatePdfReport for reportItem {}", reportItem.getId());
+//            }
         }
         logger.info(LocalDateTime.now() + "  报告监控定时任务执行完成");
     }
@@ -77,8 +77,8 @@ public class ScheduleTask {
     /**
      * 获取初始化状态的报告项，依次生成
      */
-    @Scheduled(cron = "0 */10 * * * ?")
-    private void generatePdfReport() {
+    @Scheduled(cron = "0 */1 * * * ?")
+    private void generatePdfReport() throws Exception {
         logger.info(LocalDateTime.now() + "  执行报告生成定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_EFFECTIVE);
         for (ReportDirectory reportDirectory : reportDirectories) {

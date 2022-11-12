@@ -2,6 +2,7 @@ package net.diaowen.dwsurvey.service;
 
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
+import net.diaowen.dwsurvey.entity.Question;
 import net.diaowen.dwsurvey.entity.ReportDirectory;
 import net.diaowen.dwsurvey.entity.SurveyDetail;
 import net.diaowen.dwsurvey.entity.SurveyDirectory;
@@ -20,7 +21,6 @@ public interface ReportDirectoryManager extends BaseService<ReportDirectory, Str
 	public Page<ReportDirectory> findByUser(Page<ReportDirectory> page, String reportName);
 	public List<ReportDirectory> findByState(Integer reportState);
 	public List<ReportDirectory> findBySurveyId(String surveyId);
-
-//	public void saveBaseUp(ReportDirectory t);
+	public boolean reportQuSave(List<Question> questions, String reportId) throws Exception;
 
 }

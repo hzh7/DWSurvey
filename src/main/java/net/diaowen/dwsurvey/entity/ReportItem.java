@@ -27,6 +27,7 @@ public class ReportItem  extends IdEntity {
     private String generateMsg;
     private Date generateDate;
     private Integer visibility=1;
+    private String quAnswerInfo;
 
     public String getSid() {
         return sid;
@@ -128,6 +129,14 @@ public class ReportItem  extends IdEntity {
 
     public void setReportName(String reportName) {
         this.reportName = reportName;
+    }
+
+    public String getQuAnswerInfo() {
+        return quAnswerInfo;
+    }
+
+    public void setQuAnswerInfo(String quAnswerInfo) {
+        this.quAnswerInfo = quAnswerInfo;
     }
 
     @Override

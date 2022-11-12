@@ -31,6 +31,7 @@ import java.util.Date;
 	private Integer surveyType;
 	private Integer previewPdfState=0;
 	private Integer minSampleSize=0;
+	private String reportQuIds;
 
 	public Integer getMinSampleSize() {
 		return minSampleSize;
@@ -154,4 +155,11 @@ import java.util.Date;
 		this.surveyType = surveyType;
 	}
 
+	public String getReportQuIds() {
+		return reportQuIds;
+	}
+
+	public void setReportQuIds(String reportQuIds) {
+		this.reportQuIds = reportQuIds;
+	}
 }

@@ -6,13 +6,13 @@ import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.dwsurvey.dao.ReportDirectoryDao;
 import net.diaowen.dwsurvey.dao.SurveyDirectoryDao;
-import net.diaowen.dwsurvey.entity.ReportDirectory;
-import net.diaowen.dwsurvey.entity.ReportItem;
-import net.diaowen.dwsurvey.entity.SurveyDetail;
-import net.diaowen.dwsurvey.entity.SurveyDirectory;
+import net.diaowen.dwsurvey.entity.*;
+import net.diaowen.dwsurvey.service.QuestionManager;
 import net.diaowen.dwsurvey.service.ReportDirectoryManager;
 import net.diaowen.dwsurvey.service.ReportItemManager;
+import net.diaowen.dwsurvey.service.SurveyDirectoryManager;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static net.diaowen.dwsurvey.common.CommonStatic.QU_JOIN_CHAR;
 
 @Service("reportDirectoryManager")
 public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory, String> implements ReportDirectoryManager {
@@ -31,6 +35,10 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     ReportItemManager reportItemManager;
     @Autowired
     private AccountManager accountManager;
+    @Autowired
+    private QuestionManager questionManager;
+    @Autowired
+    private SurveyDirectoryManager surveyDirectoryManager;
     @Override
     public void setBaseDao() {
         this.baseDao = reportDirectoryDao;
@@ -83,22 +91,26 @@ public class ReportDirectoryManagerImpl extends BaseServiceImpl<ReportDirectory,
     }
 
 
-//    @Transactional
-//    @Override
-//    public void saveBaseUp(ReportDirectory t) {
-//        //判断有无，有则更新
-//        ReportDirectory reportDirectory = findById(t.getId());
-//        if(reportDirectory!=null){
-//
-//            reportDirectory.setReportName(t.getReportName());
-//            reportDirectory.setReportNum(t.getReportNum());
-//            reportDirectory.setReportState(t.getReportState());
-//            reportDirectory.setUserId(t.getUserId());
-//            reportDirectory.setVisibility(t.getVisibility());
-//            super.save(reportDirectory);
-//        }
-//
-//    }
+    @Override
+    public boolean reportQuSave(List<Question> questions, String reportId) throws Exception {
+        // 报告所选题目进行有效性检查
+        List<Question> showQuestions = questions.stream().filter(Question::getShowInReport).collect(Collectors.toList());
+        surveyDirectoryManager.devCheck(showQuestions);
+
+        // 配置了需要显示在报告中的题目id
+        ArrayList<String> showInReportQus = new ArrayList<>();
+        // 保存题目
+        for (Question question : questions) {
+            questionManager.save(question);
+            if (question.getShowInReport()) {
+                showInReportQus.add(question.getId());
+            }
+        }
+        ReportDirectory reportDirectory = findById(reportId);
+        reportDirectory.setReportQuIds(Strings.join(showInReportQus, QU_JOIN_CHAR));
+        save(reportDirectory);
+        return true;
+    }
 
     @Transactional
     @Override

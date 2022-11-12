@@ -6,13 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSONObject;
-import net.diaowen.common.base.entity.User;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseService;
 import net.diaowen.dwsurvey.entity.*;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * 问卷回答
@@ -64,9 +60,9 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	/**
 	 * 获取 存在表里的json答卷的问题答案信息，转为map
 	 */
-	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t);
+	public Map<String, Map<String, Object>> parseQuAnswerInfo(SurveyAnswer t);
 
-	public static Map<String, Map<String, Object>> getQuAnswerInfo(String quAnswerInfo) {
+	public static Map<String, Map<String, Object>> parseQuAnswerInfo(String quAnswerInfo) {
 		HashMap<String, Map<String, Object>> result = new HashMap<>();
 		Map<String, Object> jsonObject = JSONObject.parseObject(quAnswerInfo);
 		for (String s : jsonObject.keySet()) {

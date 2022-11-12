@@ -194,8 +194,7 @@ public class QuestionManagerImpl extends BaseServiceImpl<Question, String> imple
 		for (String quId : quIds) {
 			hqlBuf.append("'"+quId+"'").append(",");
 		}
-//		hqlBuf.append("0)");
-		String hql=hqlBuf.substring(0, hqlBuf.lastIndexOf(","))+")";
+		String hql=hqlBuf.substring(0, hqlBuf.lastIndexOf(","))+") order by orderById";
 		questions=questionDao.find(hql);
 		if(b){
 			for (Question question : questions) {

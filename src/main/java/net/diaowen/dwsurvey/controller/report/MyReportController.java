@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -94,6 +95,25 @@ public class MyReportController {
             e.printStackTrace();
         }
         return HttpResult.FAILURE();
+    }
+
+    /**
+     * 保存报告的题目配置
+     */
+    @RequestMapping(value = "/qu-save.do",method = RequestMethod.POST)
+    @ResponseBody
+    public HttpResult reportQuSave(@RequestBody List<Question> questions, String reportId) {
+        try {
+            System.out.println("reportId: " + reportId);
+            for (Question question : questions) {
+                System.out.println(question);
+            }
+            boolean res = reportDirectoryManager.reportQuSave(questions, reportId);
+            return HttpResult.SUCCESS(res);
+        } catch (Exception e){
+            logger.error(e.getMessage());
+            return HttpResult.FAILURE(e.getMessage());
+        }
     }
 
 

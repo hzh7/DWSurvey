@@ -1,6 +1,7 @@
 package net.diaowen.dwsurvey.entity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -471,5 +472,63 @@ public class Question extends IdEntity{
 
 	public void setShowInReport(Boolean showInReport) {
 		this.showInReport = showInReport;
+	}
+
+	@Override
+	public String toString() {
+		return "Question{" +
+				"id='" + id + '\'' +
+				", belongId='" + belongId + '\'' +
+				", quName='" + quName + '\'' +
+				", quTitle='" + quTitle + '\'' +
+				", quNote='" + quNote + '\'' +
+				", keywords='" + keywords + '\'' +
+				", quType=" + quType +
+				", tag=" + tag +
+				", orderById=" + orderById +
+				", createDate=" + createDate +
+				", quTag=" + quTag +
+				", parentQuId='" + parentQuId + '\'' +
+				", yesnoOption=" + yesnoOption +
+				", isRequired=" + isRequired +
+				", checkType=" + checkType +
+				", paramInt01=" + paramInt01 +
+				", paramInt02=" + paramInt02 +
+				", visibility=" + visibility +
+				", copyFromId='" + copyFromId + '\'' +
+				", hv=" + hv +
+				", randOrder=" + randOrder +
+				", cellCount=" + cellCount +
+				", contactsAttr=" + contactsAttr +
+				", contactsField='" + contactsField + '\'' +
+				", answerInputWidth=" + answerInputWidth +
+				", answerInputRow=" + answerInputRow +
+				", reportQuType=" + reportQuType +
+				", reportQuTitle='" + reportQuTitle + '\'' +
+				", showInReport=" + showInReport +
+				", questions=" + questions +
+				", quRadios=" + quRadios +
+				", quCheckboxs=" + quCheckboxs +
+				", quMultiFillblanks=" + quMultiFillblanks +
+				", quScores=" + quScores +
+				", quOrderbys=" + quOrderbys +
+				", rowContent='" + rowContent + '\'' +
+				", colContent='" + colContent + '\'' +
+				", optionContent='" + optionContent + '\'' +
+				", removeOptionUuIds=" + Arrays.toString(removeOptionUuIds) +
+				", anAnswer=" + anAnswer +
+				", anCheckboxs=" + anCheckboxs +
+				", anDFillblanks=" + anDFillblanks +
+				", anEnumqus=" + anEnumqus +
+				", anFillblank=" + anFillblank +
+				", anRadio=" + anRadio +
+				", anYesno=" + anYesno +
+				", anScores=" + anScores +
+				", anCount=" + anCount +
+				", anOrders=" + anOrders +
+				", anUplodFiles=" + anUplodFiles +
+				", questionLogics=" + questionLogics +
+				", statJson='" + statJson + '\'' +
+				'}';
 	}
 }

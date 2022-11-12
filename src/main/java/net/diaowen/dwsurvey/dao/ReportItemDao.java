@@ -20,4 +20,5 @@ public interface ReportItemDao extends BaseDao<ReportItem, String> {
     public List<ReportItem> findByReportId(String reportId);
     public int updateStatue(String Id, Integer newStatus, Integer oldStatus);
     public int updateStatue(String Id, Integer newStatus);
+    public void save(ReportItem reportItem);
 }

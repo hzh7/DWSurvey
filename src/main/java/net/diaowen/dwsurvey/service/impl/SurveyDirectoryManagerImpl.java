@@ -617,7 +617,14 @@ public class SurveyDirectoryManagerImpl extends BaseServiceImpl<SurveyDirectory,
 			quTitleList.add(HtmlUtil.removeTagFromText(question.getQuTitle()));
 		}
 		for (String q : SurveyQuCheck.quMust) {
-			if (!quTitleList.contains(q)) {
+			boolean flag = false;
+			for (String quTitle : quTitleList) {
+				if (quTitle.contains(q)) {
+					flag = true;
+					break;
+				}
+			}
+			if (!flag) {
 				throw new Exception("["+ q + "]为必须添加的题目");
 			}
 		}
