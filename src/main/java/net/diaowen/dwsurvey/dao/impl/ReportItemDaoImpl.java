@@ -1,6 +1,7 @@
 package net.diaowen.dwsurvey.dao.impl;
 
 import net.diaowen.common.dao.BaseDaoImpl;
+import net.diaowen.common.utils.AssertUtils;
 import net.diaowen.dwsurvey.dao.ReportItemDao;
 import net.diaowen.dwsurvey.entity.ReportItem;
 import org.hibernate.SQLQuery;
@@ -66,4 +67,15 @@ public class ReportItemDaoImpl extends BaseDaoImpl<ReportItem, String> implement
         query.setParameter(2, Id);
         return query.executeUpdate();
     }
+
+    public void save(ReportItem reportItem){
+        try {
+            AssertUtils.notNull(reportItem, "entity不能为空");
+            getSession().merge(reportItem);
+            logger.debug("save entity: {}", reportItem);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

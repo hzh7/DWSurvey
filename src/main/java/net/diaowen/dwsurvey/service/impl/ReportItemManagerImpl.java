@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import net.diaowen.common.QuType;
 import net.diaowen.common.base.entity.User;
 import net.diaowen.common.base.service.AccountManager;
-import net.diaowen.common.dao.SuperHttpDao;
 import net.diaowen.common.plugs.page.Page;
 import net.diaowen.common.service.BaseServiceImpl;
 import net.diaowen.common.utils.HttpRequest;
@@ -20,6 +19,7 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -144,56 +144,45 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public ReportItem generatePdfReport(ReportItem reportItem) throws Exception {
-        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING) == 0) {
-            logger.error("reportItem id: {} 更新状态失败", reportItem.getId());
-            throw new Exception("更新状态失败");
-        }
-
+    public ReportItem generatePdfReport(ReportItem reportItem) {
+        // if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING) == 0) {
+        //     logger.error("reportItem id: {} 更新为生成中状态失败", reportItem.getId());
+        //     throw new Exception("更新为生成中状态失败");
+        // }
         String reportId = reportItem.getReportId();
-        String surveyAnswerId = reportItem.getSurveyAnswerId();
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
         ArrayList<Map<String, Object>> metricMap = new ArrayList<>();
 
         // 报告
         ReportDirectory report = reportDirectoryManager.get(reportId);
-        // 目标答卷
-        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
-        Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(surveyAnswer.getQuAnswerInfo());
+        // 答卷信息
+        Map<String, Map<String, Object>> quAnswerInfo =  buildQuAnswerInfo(reportItem);
 
-        // 当前报告设定的问卷的所有答卷
-        List<SurveyAnswer> allSurveyAnswers = surveyAnswerManager.findBySurveyId(report.getSurveyId());
-        // 答卷的题目及答案内容
-        List<Question> questions = surveyAnswerManager.findAnswerDetail(surveyAnswer);
+        // 当前报告下的所有报告项
+        List<ReportItem> allReportItems = findByReportId(reportId);
         // 报告中选中的题目
-        List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
+        String[] quIds = report.getReportQuIds().split(String.valueOf(QU_JOIN_CHAR));
+        List<Question> reportQuestions = questionManager.findByQuIds(quIds, true);
 
         // 同年级的答卷的量表题得分
         Map<String, List<Double>> sameGradeScoreList = new HashMap<>();
         // 同年级的答卷的量表题得分
         Map<String, List<Double>> sameSchoolScoreList = new HashMap<>();
         // 全体答卷的量表题得分
-        Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions);
+        Map<String, List<Double>> allScoreList = getTargetQuAgvScore(allReportItems, reportQuestions);
         // 年级 学校名称
         String gradeQuId = "";
         String grade = "";
         String schoolQuId = "";
 
         // 处理维度题
-        for (Question question : questions) {
-            ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
-            if (reportQuestion != null && reportQuestion.getReportQuType().equals(0)) {
+        for (Question question : reportQuestions) {
+            if (question != null && question.getReportQuType().equals(0)) {
                 // 维度信息题
                 Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
                 HashMap<String, Object> quAnswerMap = new HashMap<>();
                 String title = stringObjectMap.get("title").toString();
-                if (title.equals("我的成绩在班级里位居")){  // 两个补丁：问卷题目与报告展示略不同
-                    title = "班级成绩";
-                }
-                else if (Arrays.asList("我的成绩在全校里位居", "我的成绩在年级里位居").contains(title)){
-                    title = "年级成绩";
-                }
                 quAnswerMap.put("key", title);
                 quAnswerMap.put("value", stringObjectMap.get("answer"));
                 dimMap.add(quAnswerMap);
@@ -201,21 +190,20 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 if (quAnswerInfo.get(question.getId()).get("title").equals("年级")) {
                     gradeQuId = question.getId();
                     grade = quAnswerInfo.get(question.getId()).get("answer").toString();
-                    sameGradeScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, grade);
+                    sameGradeScoreList = getTargetQuAgvScore(allReportItems, reportQuestions, question, grade);
                 }
                 // 若为学校名称题，获取同学校名称下答卷的所有得分列表
                 if (quAnswerInfo.get(question.getId()).get("title").equals("学校名称")) {
                     schoolQuId = question.getId();
                     String school = quAnswerInfo.get(question.getId()).get("answer").toString();
-                    sameSchoolScoreList = getTargetQuAgvScore(allSurveyAnswers, reportQuestions, question, school);
+                    sameSchoolScoreList = getTargetQuAgvScore(allReportItems, reportQuestions, question, school);
                 }
             }
         }
 
         // 处理量表题
-        for (Question question : questions) {
-            ReportQuestion reportQuestion = reportQuestions.stream().filter(x -> x.getQuId().equals(question.getId())).findFirst().orElse(null);
-            if (reportQuestion == null || reportQuestion.getReportQuType().equals(0)) {
+        for (Question question : reportQuestions) {
+            if (question == null || question.getReportQuType().equals(0)) {
                 // 不是报告选中的题或者维度题则跳过
                 continue;
             }
@@ -247,31 +235,31 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             gradeRange = "高中";
         }
         statisticsMap.put("grade_range", gradeRange);
-        statisticsMap.put("grade_range_uv", (int) getGradeRangeUv(allSurveyAnswers, gradeQuId, grade));
+        statisticsMap.put("grade_range_uv", (int) getGradeRangeUv(allReportItems, gradeQuId, grade));
         String finalGradeQuId = gradeQuId;
-        statisticsMap.put("same_grade_uv",  (int) allSurveyAnswers.stream().filter(
+        statisticsMap.put("same_grade_uv",  (int) allReportItems.stream().filter(
                 x -> {
-                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    Map<String, Map<String, Object>> theQuAnswerInfo =  buildQuAnswerInfo(x);
                     return theQuAnswerInfo.get(finalGradeQuId).get("answer").toString().equals(quAnswerInfo.get(finalGradeQuId).get("answer").toString());
                 }
         ).count());
 
         String finalSchoolQuId = schoolQuId;
-        statisticsMap.put("school_num", (int) allSurveyAnswers.stream().map(x -> {
-            Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+        statisticsMap.put("school_num", (int) allReportItems.stream().map(x -> {
+            Map<String, Map<String, Object>> theQuAnswerInfo =  buildQuAnswerInfo(x);
             return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString();
         }).distinct().count());
 
-        statisticsMap.put("same_school_uv", (int) allSurveyAnswers.stream().filter(
+        statisticsMap.put("same_school_uv", (int) allReportItems.stream().filter(
                 x -> {
-                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    Map<String, Map<String, Object>> theQuAnswerInfo =  buildQuAnswerInfo(x);
                     return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString());
                 }
         ).count());
 
-        statisticsMap.put("same_school_grade_uv", (int) allSurveyAnswers.stream().filter(
+        statisticsMap.put("same_school_grade_uv", (int) allReportItems.stream().filter(
                 x -> {
-                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    Map<String, Map<String, Object>> theQuAnswerInfo =  buildQuAnswerInfo(x);
                     return (theQuAnswerInfo.get(finalGradeQuId).get("answer").toString().equals(quAnswerInfo.get(finalGradeQuId).get("answer").toString()) &&
                             theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString()));
                 }
@@ -293,14 +281,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             pdfPath = postGeneratePdf(jsonObject);
             logger.info("reportItem id: {} pdf path {}", reportItem.getId(), pdfPath);
         } catch (Exception e) {
-            reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_FAILED);
+            reportItem.setGenerateStatus(REPORT_ITEM_STATUS_FAILED);
+            reportItemDao.save(reportItem);
             throw new RuntimeException(e);
         }
         reportItem.setPdfAddr(pdfPath);
-        if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_SUCCESS, REPORT_ITEM_STATUS_GENERATING) == 0) {
-            logger.error("reportItem id: {} 更新状态失败", reportItem.getId());
-            throw new Exception("更新状态失败");
-        }
+        // if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_SUCCESS, REPORT_ITEM_STATUS_GENERATING) == 0) {
+        //     logger.error("reportItem id: {} 更新为成功状态失败", reportItem.getId());
+        //     throw new Exception("更新为成功状态失败");
+        // }
         reportItem.setGenerateStatus(REPORT_ITEM_STATUS_SUCCESS);
         reportItem.setGenerateDate(new Date());
         reportItemDao.save(reportItem);
@@ -311,7 +300,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     /**
      * 统计同年级段的人数
      */
-    private long getGradeRangeUv(List<SurveyAnswer> allSurveyAnswers, String gradeQuId, String grade) {
+    private long getGradeRangeUv(List<ReportItem> allReportItems, String gradeQuId, String grade) {
         List<String> targetGradeRange;
         if (PRIMARY_SCHOOL.contains(grade)) {
             targetGradeRange = PRIMARY_SCHOOL;
@@ -321,14 +310,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             targetGradeRange = HIGH_SCHOOL;
         }
         List<String> finalTargetGradeRange = targetGradeRange;
-        return allSurveyAnswers.stream().filter(
+        return allReportItems.stream().filter(
                 x -> {
-                    Map<String, Map<String, Object>> theQuAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+                    Map<String, Map<String, Object>> theQuAnswerInfo =  buildQuAnswerInfo(x);
                     return finalTargetGradeRange.contains(theQuAnswerInfo.get(gradeQuId).get("answer").toString());
                 }
         ).count();
     }
 
+    @Transactional
     @Override
     public void initReportItem(String reportId, Boolean rebuild) {
         // 报告
@@ -356,11 +346,63 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
                 newReportItem.setGenerateDate(null);
             }
+
+            HashMap<String, HashMap<String, Object>> quAnswerInfo = parseQuAnswerInfo(surveyAnswer);
+            String jsonString = JSON.toJSONString(quAnswerInfo);
+            newReportItem.setQuAnswerInfo(jsonString);
             reportItemDao.save(newReportItem);
             logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
         }
     }
 
+    /**
+     * 构建一份答卷的问题答案信息
+     */
+    private HashMap<String, HashMap<String, Object>> parseQuAnswerInfo(SurveyAnswer t) {
+        HashMap<String, HashMap<String, Object>> result = new HashMap<>();
+        // 答卷的题目及答案内容
+        List<Question> questions = surveyAnswerManager.findAnswerDetail(t);
+        for (Question question : questions) {
+            result.put(question.getId(), getQuestionAnswer(question));
+        }
+        return result;
+    }
+
+    /**
+     * 解析问题答案获取报告需要呈现的内容
+     */
+    private HashMap<String, Object> getQuestionAnswer(Question question) {
+        HashMap<String, Object> result = new HashMap<>();
+        if (question.getQuType().equals(QuType.FILLBLANK)) {
+            result.put("title", HtmlUtil.removeTagFromText(question.getReportQuTitle()));
+            result.put("answer", question.getAnFillblank().getAnswer());
+        }
+        if (question.getQuType().equals(QuType.SCORE)) {
+            result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
+            int sum = 0;
+            for (QuScore quScore : question.getQuScores()) {
+                AnScore first = question.getAnScores().stream().filter(y -> y.getQuRowId().equals(quScore.getId())).findFirst().get();
+                if (quScore.getScoringType().equals(1)) {
+                    // 如果是反向计分
+                    sum += 6 - Integer.parseInt(first.getAnswserScore());
+                } else {
+                    sum +=  Integer.parseInt(first.getAnswserScore());
+                }
+            }
+            result.put("answer", (float) (sum/ question.getQuScores().size()));
+        }
+        if (question.getQuType().equals(QuType.RADIO)) {
+            String quItemId = question.getAnRadio().getQuItemId();
+            QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
+            assert quRadio != null;
+            result.put("title", HtmlUtil.removeTagFromText(question.getReportQuTitle()));
+            result.put("answer", HtmlUtil.removeTagFromText(quRadio.getOptionName()));
+        }
+        // todo 其他题型
+        return result;
+    }
+
+    @Transactional
     @Override
     public ReportItem initReportItem(String reportId, String surveyAnswerId) {
         if (reportId == null || surveyAnswerId == null) {
@@ -380,7 +422,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         User user = accountManager.getUser(surveyAnswer.getUserId());
         newReportItem.setUserName(user.getName());
 
-        newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
+        newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);  // todo
         reportItemDao.save(newReportItem);
         logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
         return newReportItem;
@@ -416,28 +458,25 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
     /**
      * 获取一份问卷中指定题目回答了相同答案的答卷，计算这些问卷的所有量表题得分
-     * @param surveyAnswers 指定问卷下的所有答卷
-     * @param question
-     * @param answer
      */
-    private Map<String, List<Double>> getTargetQuAgvScore(List<SurveyAnswer> surveyAnswers, List<ReportQuestion> reportQuestions, Question question, String answer) {
+    private Map<String, List<Double>> getTargetQuAgvScore(List<ReportItem> allReportItems, List<Question> reportQuestions, Question question, String answer) {
         // 找到目标题型的答案为 answer 的答卷
-        List<SurveyAnswer> targetSurveyAnswers = surveyAnswers.stream().filter(x -> {
-            Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+        List<ReportItem> targetReportItems = allReportItems.stream().filter(x -> {
+            Map<String, Map<String, Object>> quAnswerInfo = buildQuAnswerInfo(x);
             return quAnswerInfo.get(question.getId()).get("answer").toString().equals(answer);
         }).collect(Collectors.toList());
-        return getTargetQuAgvScore(targetSurveyAnswers, reportQuestions);
+        return getTargetQuAgvScore(targetReportItems, reportQuestions);
     }
 
-    private Map<String, List<Double>> getTargetQuAgvScore(List<SurveyAnswer> surveyAnswers, List<ReportQuestion> reportQuestions) {
+    private Map<String, List<Double>> getTargetQuAgvScore(List<ReportItem> reportItems, List<Question> reportQuestions) {
         Map<String, List<Double>> result = new HashMap<>();
-        if (surveyAnswers.isEmpty()) {
+        if (reportItems.isEmpty()) {
             return result;
         }
         // 量表题的id找出来作为key
-        reportQuestions.stream().filter(x->x.getReportQuType().equals(1)).forEach(x -> result.put(x.getQuId(), new ArrayList<>()));
-        surveyAnswers.forEach(x -> {
-            Map<String, Map<String, Object>> quAnswerInfo = SurveyAnswerManager.getQuAnswerInfo(x.getQuAnswerInfo());
+        reportQuestions.stream().filter(x->x.getReportQuType().equals(1)).forEach(x -> result.put(x.getId(), new ArrayList<>()));
+        for (ReportItem reportItem : reportItems) {
+            Map<String, Map<String, Object>> quAnswerInfo = buildQuAnswerInfo(reportItem);
             for (String key : quAnswerInfo.keySet()) {
                 // 非需要计算均值的量表题 则跳过
                 if (!result.containsKey(key)) {
@@ -446,7 +485,21 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 // 量表题的得分加入list
                 result.get(key).add(Double.parseDouble(quAnswerInfo.get(key).get("answer").toString()));
             }
-        });
+        }
+        return result;
+    }
+
+    /**
+     * 获取答卷的回答信息，k-v形式（信息题）
+     * 其中对于评分题，查询db计算，需要判断是否反向计分
+     * metric：true；需要处理评分题；false：不处理
+     */
+    private Map<String, Map<String, Object>> buildQuAnswerInfo(ReportItem reportItem) {
+        HashMap<String, Map<String, Object>> result = new HashMap<>();
+        Map<String, Object> jsonObject = JSONObject.parseObject(reportItem.getQuAnswerInfo());
+        for (String s : jsonObject.keySet()) {
+            result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+        }
         return result;
     }
 
@@ -502,8 +555,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     public boolean generatePreviewPdfReport(String reportId) {
         ReportDirectory report = reportDirectoryManager.getReport(reportId);
         // 报告中选中的题目
-        List<ReportQuestion> reportQuestions = reportQuestionManager.findByReportId(reportId);
-        System.out.println(reportQuestions);
+        String[] quIds = report.getReportQuIds().split(String.valueOf(QU_JOIN_CHAR));
+        List<Question> reportQuestions = questionManager.findByQuIds(quIds, true);
 
         HashMap<String, Object> reportData = new HashMap<>();
         reportData.put("reportId", reportId);
@@ -550,7 +603,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return false;
     }
 
-    private HashMap<String, Object> buildMetric(ReportQuestion reportQuestion){
+    private HashMap<String, Object> buildMetric(Question reportQuestion){
         HashMap<String, Object> scoreMap =new HashMap<>();
         scoreMap.put("key", reportQuestion.getReportQuTitle());
         // 该题得分
@@ -578,6 +631,11 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         List<String> sameAnswersInSurvey = reportItemDao.getSameAnswerInSurveyQu(surveyId, quId, targetAnswer);
         System.out.println(sameAnswersInSurvey);
         return null;
+    }
+
+    public List<ReportItem> findByReportId(String reportId){
+        List<ReportItem> reportItems = reportItemDao.findByReportId(reportId);
+        return reportItems;
     }
 
     /**

@@ -29,4 +29,6 @@ public class CommonStatic {
     public static List<String> JUNIOR_HIGH_SCHOOL = Arrays.asList("预备初一", "初一", "初二", "初三");  // 初中
     public static List<String> HIGH_SCHOOL = Arrays.asList("高一", "高二", "高三");  // 高中
 
+    public static final char QU_JOIN_CHAR = ';';
+
 }

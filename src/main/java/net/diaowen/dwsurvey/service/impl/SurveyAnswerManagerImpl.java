@@ -93,6 +93,7 @@ public class SurveyAnswerManagerImpl extends
 	}
 
 	@Override
+	@Transactional
 	public List<Question> findAnswerDetail(SurveyAnswer answer) {
 		String surveyId = answer.getSurveyId();
 		String surveyAnswerId = answer.getId();
@@ -795,7 +796,7 @@ public class SurveyAnswerManagerImpl extends
 //	}
 
 	@Override
-	public Map<String, Map<String, Object>> getQuAnswerInfo(SurveyAnswer t) {
+	public Map<String, Map<String, Object>> parseQuAnswerInfo(SurveyAnswer t) {
 		HashMap<String, Map<String, Object>> result = new HashMap<>();
 		String quAnswerInfo = t.getQuAnswerInfo();
 		Map<String, Object> jsonObject = JSONObject.parseObject(quAnswerInfo);
@@ -860,9 +861,10 @@ public class SurveyAnswerManagerImpl extends
 		}
 		if (question.getQuType().equals(QuType.SCORE)) {
 			List<AnScore> scores = question.getAnScores();
-			int sum = scores.stream().mapToInt(x -> Integer.parseInt(x.getAnswserScore())).sum();
+			HashMap<String, String> scoresResult = new HashMap<>();
+			scores.forEach(x->scoresResult.put(x.getId(), x.getAnswserScore()));
 			result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
-			result.put("answer", (float)sum/scores.size());
+			result.put("answer", scoresResult);
 		}
 		if (question.getQuType().equals(QuType.RADIO)) {
 			String quItemId = question.getAnRadio().getQuItemId();

@@ -14,7 +14,7 @@ class ReportItemDaoTest {
 
     @Test
     void updateStatue() {
-        int i = reportItemDao.updateStatue("1496ccfb-6a0e-4f38-8295-a3d8d07fc0df", 1, 1);
+        int i = reportItemDao.updateStatue("1706942d-3641-49ad-adbb-10fb9b7084e7", 1, 2);
         System.out.println(i);
     }
 }

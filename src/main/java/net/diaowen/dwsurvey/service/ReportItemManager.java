@@ -53,6 +53,8 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 
 	public List<SurveyAnswer> getSameAnswerInSurveyQu(String surveyId, String quId, String targetAnswer);
 
+	public List<ReportItem> findByReportId(String reportId);
+
 	/**
 	 * 获取配置报告下的当前报告数量
 	 * @param report

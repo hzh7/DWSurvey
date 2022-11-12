@@ -75,6 +75,8 @@ public class ResponseController {
 	public String save(HttpServletRequest request,HttpServletResponse response,String surveyId) throws Exception {
 		return saveSurvey(request,response,surveyId);
 	}
+
+	@Deprecated
 	@RequestMapping("/saveReport.do")
 	public String saveReport(HttpServletRequest request,HttpServletResponse response,String reportId) throws Exception {
 		try {
@@ -97,6 +99,7 @@ public class ResponseController {
 	 * 当chose=y时候表示问卷中的该题被选中需要进入报告
 	 * type表示报告题型：0维度题 or 1量表题
 	 */
+	@Deprecated
 	private void parseReportQuestion(Map<String, Map<String, String>> quChoseMap, List<Question> quIds, String reportId) throws Exception {
 		// 保存  todo 幂等
 		for (String key : quChoseMap.keySet()) {
