@@ -562,6 +562,8 @@ CREATE TABLE `t_survey_detail` (
                                    `survey_qu_num` int(11) DEFAULT NULL,
                                    `yn_end_num` int(11) DEFAULT NULL,
                                    `yn_end_time` int(11) DEFAULT NULL,
+                                   `user_answer_cnt` int(11) DEFAULT 0 COMMENT '同一用户回答次数限制，默认0不限制',
+                                   `user_answer_limit_day` int(11) DEFAULT 0 COMMENT '同一用户回答次数限制的生效时常',
                                    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 

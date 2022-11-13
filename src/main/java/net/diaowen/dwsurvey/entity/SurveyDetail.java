@@ -63,7 +63,9 @@ public class SurveyDetail extends IdEntity{
 	//显示分享
 	private Integer showShareSurvey=1;
 	private Integer showAnswerDa=0;
-
+	// 同一用户回答次数限制，默认0不限制
+	private Integer userAnswerCnt=0;
+	private Integer userAnswerLimitDay=0;
 	public String getDirId() {
 		return dirId;
 	}
@@ -186,4 +188,19 @@ public class SurveyDetail extends IdEntity{
 	    this.showAnswerDa = showAnswerDa;
 	}
 
+	public Integer getUserAnswerCnt() {
+		return userAnswerCnt;
+	}
+
+	public void setUserAnswerCnt(Integer userAnswerCnt) {
+		this.userAnswerCnt = userAnswerCnt;
+	}
+
+	public Integer getUserAnswerLimitDay() {
+		return userAnswerLimitDay;
+	}
+
+	public void setUserAnswerLimitDay(Integer userAnswerLimitDay) {
+		this.userAnswerLimitDay = userAnswerLimitDay;
+	}
 }

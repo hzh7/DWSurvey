@@ -28,6 +28,7 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	public SurveyAnswer getTimeInByIp(SurveyDetail surveyDetail, String ip);
 
 	public Long getCountByIp(String surveyId, String ip);
+	public Long getCountByUserId(String surveyId, String userId, Integer dateLimit);
 
 	public String exportXLS(String surveyId, String savePath, boolean isExpUpQu);
 

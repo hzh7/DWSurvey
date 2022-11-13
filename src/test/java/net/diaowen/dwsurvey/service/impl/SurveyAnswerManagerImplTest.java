@@ -37,4 +37,11 @@ class SurveyAnswerManagerImplTest {
             System.out.println(surveyAnswer.getSurveyId());
         }
     }
+
+    @Test
+    void getCountByUserId() {
+        Long countByUserId = surveyAnswerManager.getCountByUserId("661f9ac4-c738-447e-b470-d3b29addcc6d", "1", 1);
+        System.out.println(countByUserId);
+
+    }
 }
