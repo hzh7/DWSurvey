@@ -75,7 +75,8 @@ public class SurveyDetailManagerImpl extends BaseServiceImpl<SurveyDetail, Strin
 			surveyDetail.setYnEndNum(t.getYnEndNum());
 			surveyDetail.setEndNum(t.getEndNum());
 			surveyDetail.setEndTime(t.getEndTime());
-
+			surveyDetail.setUserAnswerCnt(t.getUserAnswerCnt());
+			surveyDetail.setUserAnswerLimitDay(t.getUserAnswerLimitDay());
 
 			super.save(surveyDetail);
 		}

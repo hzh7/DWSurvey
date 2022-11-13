@@ -223,6 +223,21 @@ public class SurveyAnswerManagerImpl extends
 	}
 
 	@Override
+	public Long getCountByUserId(String surveyId, String userId, Integer dateLimit){
+		Long count = 0L;
+		String hql = "select count(*) from SurveyAnswer x where x.surveyId=?1 and x.userId=?2";
+		if (dateLimit != null && dateLimit > 0) {
+			Date now = new Date();
+			now.setTime(now.getTime() - dateLimit*24*60*60*1000);
+			hql += " and x.endAnDate >=?3";
+			count = (Long) surveyAnswerDao.findUniObjs(hql, surveyId, userId, now);
+		}else {
+			count = (Long) surveyAnswerDao.findUniObjs(hql, surveyId, userId);
+		}
+		return count;
+	}
+
+	@Override
 	public List<SurveyAnswer> answersByIp(String surveyId, String ip) {
 		Criterion criterionSurveyId = Restrictions.eq("surveyId", surveyId);
 		Criterion criterionIp = Restrictions.eq("ipAddr", ip);

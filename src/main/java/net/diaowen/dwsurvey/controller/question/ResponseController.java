@@ -1,5 +1,6 @@
 package net.diaowen.dwsurvey.controller.question;
 
+import com.octo.captcha.service.CaptchaServiceException;
 import com.octo.captcha.service.image.ImageCaptchaService;
 import net.diaowen.common.QuType;
 import net.diaowen.common.base.entity.User;
@@ -59,8 +60,6 @@ public class ResponseController {
 	@Autowired
 	private ReportQuestionManager reportQuestionManager;
 	@Autowired
-	private SurveyDirectoryManager surveyDirectoryManager;
-	@Autowired
 	private QuestionManager questionManager;
 	@Autowired
 	private IPService ipService;
@@ -76,37 +75,41 @@ public class ResponseController {
 		return saveSurvey(request,response,surveyId);
 	}
 
-//	@RequestMapping("/save2.do")
-//	@ResponseBody
-//	public String save2(HttpServletRequest request,HttpServletResponse response,String surveyId) throws Exception {
-//		SurveyDirectory surveyDirectory = null;
-//		try {
-//			surveyDirectory = directoryManager.getSurvey(surveyId);
-//			List<Question> questions = questionManager.find(surveyId, "2");
-//			Map<String, Map<String, Object>> quMaps = buildSaveSurveyMap(request);
-//
-//			for (Question question : questions) {
-//				if (question.getQuTitle().contains("姓名")) {
-//					name = question.getAnFillblank().getAnswer();
-//				}
-//				if (question.getQuTitle().contains("邮箱")) {
-//					email = question.getAnFillblank().getAnswer();
-//				}
-//				if (question.getQuTitle().equals("身份证号")) {
-//					String idCard = question.getAnFillblank().getAnswer();
-//					if (idCard.length() != 18) {
-//						return;
-//					}
-//				}
-//			}
-//
-//			if(!answerCheckData.isAnswerCheck())
-//				return answerRedirect(directory,answerCheckData.getAnswerCheckCode());
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return answerRedirect(directory,5);
-//		}
-//	}
+	@RequestMapping("/check_answer_cnt.do")
+	@ResponseBody
+	public String checkUserAnswerCnt(HttpServletRequest request,HttpServletResponse response,String surveyId) {
+		SurveyDirectory surveyDirectory = null;
+		try {
+			surveyDirectory = directoryManager.getSurvey(surveyId);
+			SurveyDetail surveyDetail = surveyDirectory.getSurveyDetail();
+			// 没有回答次数的限制
+			if (surveyDetail.getUserAnswerCnt() == null || surveyDetail.getUserAnswerCnt() == 0) {
+				return "success";
+			}
+			Integer dateLimit = surveyDetail.getUserAnswerLimitDay();
+			List<Question> questions = questionManager.find(surveyId, "2");
+			Map<String, Map<String, Object>> quMaps = buildSaveSurveyMap(request);
+			String email = null;
+			for (Question question : questions) {
+				if (question.getQuTitle().contains("邮箱")) {  // fixme: 当前以邮箱作为用户唯一凭证
+					email = (String) quMaps.get("fillblankMaps").get(question.getId());
+					break;
+				}
+			}
+			User userByEmail = accountManager.findUserByEmail(email);
+			if (userByEmail!=null){
+				// 用户当前已经回答过此问卷的次数
+				Long countByUserId = surveyAnswerManager.getCountByUserId(surveyId, userByEmail.getId(), dateLimit>0?dateLimit:null);
+				if (countByUserId >= surveyDirectory.getSurveyDetail().getUserAnswerCnt()){
+					return "failed";
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "error";
+		}
+		return "success";
+	}
 
 	@Deprecated
 	@RequestMapping("/saveReport.do")
@@ -116,7 +119,7 @@ public class ResponseController {
 			// 报告中的所有问题
 			List<Question> quIds = questionManager.findByQuIds(quChoseMap.keySet().toArray(new String[0]), false);
 			// 报告所选题目进行有效性检查
-			surveyDirectoryManager.devCheck(quIds);
+			directoryManager.devCheck(quIds);
 			// 处理/保存
 			parseReportQuestion(quChoseMap, quIds, reportId);
 			return "redirect:"+DWSurveyConfig.DWSURVEY_WEB_SITE_URL+"/static/diaowen/message.html?respType=902";
@@ -231,6 +234,30 @@ public class ResponseController {
 			}
 		}
 
+		//3、用户的回答次数的限制
+		if (directory.getSurveyDetail().getUserAnswerCnt() != null && directory.getSurveyDetail().getUserAnswerCnt() == 0) {
+			// 限制生效的时长
+			Integer dateLimit = surveyDetail.getUserAnswerLimitDay();
+			List<Question> questions = questionManager.find(surveyId, "2");
+			Map<String, Map<String, Object>> quMaps = buildSaveSurveyMap(request);
+			String email = null;
+			for (Question question : questions) {
+				if (question.getQuTitle().contains("邮箱")) {  // fixme: 当前以邮箱作为用户唯一凭证
+					email = (String) quMaps.get("fillblankMaps").get(question.getId());
+				}
+			}
+			User userByEmail = accountManager.findUserByEmail(email);
+			if (userByEmail!=null){
+				// 用户当前已经回答过此问卷的次数
+				Long countByUserId = surveyAnswerManager.getCountByUserId(surveyId, userByEmail.getId(), dateLimit>0?dateLimit:null);
+				if (countByUserId >= directory.getSurveyDetail().getUserAnswerCnt()){
+					answerCheckData.setAnswerCheck(false);
+					answerCheckData.setAnswerCheckCode(24);//用户的回答次数限制
+					return answerCheckData;
+				}
+			}
+		}
+
 
 
 		String ruleCode = request.getParameter("ruleCode");
@@ -294,26 +321,24 @@ public class ResponseController {
 			String refCookieKey = "r_"+surveyId;
 			Cookie refCookie = CookieUtils.getCookie(request, refCookieKey);
 			if (( refresh==1 && refCookie!=null)) {
-				String code = request.getParameter("jcaptchaInput");
-				if (!imageCaptchaService.validateResponseForID(request.getSession().getId(), code)) {
+				try{
+					String code = request.getParameter("jcaptchaInput");
+					if (!imageCaptchaService.validateResponseForID(request.getSession().getId(), code)) {
 //					return "redirect:/response/answer-dwsurvey.do?surveyId="+surveyId+"&redType=4";
 //				return answerRedirect(directory,4);
-					answerCheckData.setAnswerCheck(false);
-					answerCheckData.setAnswerCheckCode(4);
-					return answerCheckData;
+						answerCheckData.setAnswerCheck(false);
+						answerCheckData.setAnswerCheckCode(4);
+						return answerCheckData;
+					}
+				} catch (CaptchaServiceException e) {
+					e.printStackTrace();
 				}
+
 			}
 			//设置entity的数据
 			if(answerCheckData.isAnswerCheck()){
-
-				User user = accountManager.getCurUser();
-				if (user != null) {
-					entity.setUserId(user.getId());
-				}
-
 				entity.setIpAddr(ip);
 				entity.setSurveyId(surveyId);
-
 
 			}
 		}
