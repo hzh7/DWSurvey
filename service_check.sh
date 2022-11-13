@@ -21,7 +21,7 @@ P_ID2=$(ps -ef |grep "python" |grep "app.py" |grep " $1 " |grep -v "grep" |awk '
 if [ "$P_ID2" == "" ]; then
   echo "flask process not exists"
   mv /data/dwsurvey/log/8082.log /data/dwsurvey/log/$DATA-8082.log
-  nohup /usr/bin/python3.9 app.py >> /data/dwsurvey/log/8082.log &
+  nohup /usr/bin/python3.9 /data/dwsurvey/flaskProject/app.py >> /data/dwsurvey/log/8082.log &
 else
   echo "flask process pid is: $P_ID2"
 fi

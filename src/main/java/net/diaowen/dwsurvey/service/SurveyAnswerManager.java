@@ -73,6 +73,7 @@ public interface SurveyAnswerManager extends BaseService<SurveyAnswer, String>{
 	}
 
 	public List<SurveyAnswer> findBySurveyId(String surveyId);
+	public List<SurveyAnswer> findByUserId(String userId);
 	public List<SurveyAnswer> findByCreateTimeAfter(Date time);
 
 	/**

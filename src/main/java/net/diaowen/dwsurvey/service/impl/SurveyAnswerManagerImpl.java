@@ -76,6 +76,8 @@ public class SurveyAnswerManagerImpl extends
 	private SurveyDirectoryManager surveyDirectoryManager;
 	@Autowired
 	private AccountManager accountManager;
+	@Autowired
+	private ReportItemManager reportItemManager;
 
 	@Override
 	public void setBaseDao() {
@@ -227,10 +229,10 @@ public class SurveyAnswerManagerImpl extends
 		Long count = 0L;
 		String hql = "select count(*) from SurveyAnswer x where x.surveyId=?1 and x.userId=?2";
 		if (dateLimit != null && dateLimit > 0) {
-			Date now = new Date();
-			now.setTime(now.getTime() - dateLimit*24*60*60*1000);
+			Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.DATE, -dateLimit);
 			hql += " and x.endAnDate >=?3";
-			count = (Long) surveyAnswerDao.findUniObjs(hql, surveyId, userId, now);
+			count = (Long) surveyAnswerDao.findUniObjs(hql, surveyId, userId, cal.getTime());
 		}else {
 			count = (Long) surveyAnswerDao.findUniObjs(hql, surveyId, userId);
 		}
@@ -700,6 +702,7 @@ public class SurveyAnswerManagerImpl extends
 		for (String id:ids) {
 			SurveyAnswer surveyAnswer = get(id);
 			surveyId = surveyAnswer.getSurveyId();
+			reportItemManager.archivedReportItemBySurveyAnswer(surveyAnswer);
 			delete(surveyAnswer);
 		}
 		if(surveyId!=null) upAnQuNum(surveyId);
@@ -824,6 +827,12 @@ public class SurveyAnswerManagerImpl extends
 	@Override
 	public List<SurveyAnswer> findBySurveyId(String surveyId) {
 		return surveyAnswerDao.findBySurveyId(surveyId);
+	}
+
+	@Override
+	public List<SurveyAnswer> findByUserId(String userId) {
+		Criterion criterion1=Restrictions.eq("userId", userId);
+		return surveyAnswerDao.find(criterion1);
 	}
 
     @Override

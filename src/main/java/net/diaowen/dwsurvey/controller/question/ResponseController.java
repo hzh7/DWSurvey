@@ -168,7 +168,7 @@ public class ResponseController {
 			answerSurvey(request,surveyId,entity);
 			surveyAnswerManager.parseUserFromSurveyAnswer(entity);
 			answerAfterUpData(request,response,surveyId,entity.getId());
-			reportItemManager.initAndGenerateReportItem(entity);
+			reportItemManager.initReportItemBySurveyAnswer(entity);
 			return answerRedirect(directory,6, entity.getId());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -235,7 +235,7 @@ public class ResponseController {
 		}
 
 		//3、用户的回答次数的限制
-		if (directory.getSurveyDetail().getUserAnswerCnt() != null && directory.getSurveyDetail().getUserAnswerCnt() == 0) {
+		if (directory.getSurveyDetail().getUserAnswerCnt() != null && directory.getSurveyDetail().getUserAnswerCnt() > 0) {
 			// 限制生效的时长
 			Integer dateLimit = surveyDetail.getUserAnswerLimitDay();
 			List<Question> questions = questionManager.find(surveyId, "2");

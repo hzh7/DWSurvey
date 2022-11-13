@@ -123,9 +123,48 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception {
+    public void archivedReportItemBySurveyAnswer(SurveyAnswer surveyAnswer) {
+        // 为该问卷配置过的所有报告依次初始化
+        List<ReportDirectory> reportDirectories = reportDirectoryManager.findBySurveyId(surveyAnswer.getSurveyId());
+        for (ReportDirectory reportDirectory : reportDirectories) {
+            ReportItem oldReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportDirectory.getId(), surveyAnswer.getId());
+            if (oldReportItem != null && !oldReportItem.getGenerateStatus().equals(REPORT_ITEM_STATUS_ARCHIVED)) {
+                // 当同问卷下的历史答卷所生成的报告进行归档
+                oldReportItem.setGenerateStatus(REPORT_ITEM_STATUS_ARCHIVED);
+                reportItemDao.save(oldReportItem);
+            }
+        }
+    }
+
+    public void initReportItemBySurveyAnswer(SurveyAnswer surveyAnswer) throws Exception {
         String surveyId = surveyAnswer.getSurveyId();
+        // 为该问卷配置过的所有报告依次初始化
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findBySurveyId(surveyId);
+
+        // 同问卷下同用户历史答卷置为归档
+        if (surveyAnswer.getUserId() != null) {
+            List<SurveyAnswer> surveyAnswers = surveyAnswerManager.findByUserId(surveyAnswer.getUserId());
+            for (SurveyAnswer answer : surveyAnswers) {
+                // 跳过当前需要处理的答卷
+                if (answer.getId().equals(surveyAnswer.getId())) {
+                    continue;
+                }
+                // 跳过非当前需要处理的问卷
+                if (!answer.getSurveyId().equals(surveyAnswer.getSurveyId())) {
+                    continue;
+                }
+                for (ReportDirectory reportDirectory : reportDirectories) {
+                    ReportItem oldReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportDirectory.getId(), answer.getId());
+                    if (oldReportItem != null && REPORT_ITEM_STATUS_SUCCESS.equals(oldReportItem.getGenerateStatus())) {
+                        // 当同问卷下的历史答卷所生成的报告进行归档
+                        oldReportItem.setGenerateStatus(REPORT_ITEM_STATUS_ARCHIVED);
+                        reportItemDao.save(oldReportItem);
+                    }
+                }
+
+            }
+        }
+
         for (ReportDirectory reportDirectory : reportDirectories) {
             // 方案一 仅初始化 异步生成报告
             initReportItem(reportDirectory.getId(), surveyAnswer.getId());
@@ -144,11 +183,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     }
 
     @Override
-    public ReportItem generatePdfReport(ReportItem reportItem) {
+    public ReportItem generatePdfReport(ReportItem reportItem) throws Exception {
         // if (reportItemDao.updateStatue(reportItem.getId(), REPORT_ITEM_STATUS_GENERATING) == 0) {
         //     logger.error("reportItem id: {} 更新为生成中状态失败", reportItem.getId());
         //     throw new Exception("更新为生成中状态失败");
         // }
+        if (reportItem.getGenerateStatus().equals(REPORT_ITEM_STATUS_ARCHIVED)) {
+            logger.info("reportItem {} has been archived", reportItem.getId());
+            throw new Exception("该报告已归档，不支持再次生成报告");
+        }
         String reportId = reportItem.getReportId();
         // 报告量表、维度
         ArrayList<Map<String, Object>> dimMap = new ArrayList<>();
@@ -161,6 +204,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         // 当前报告下的所有报告项
         List<ReportItem> allReportItems = findByReportId(reportId);
+        // 过滤已归档的报告，不参与报告生成
+        allReportItems = allReportItems.stream().filter(x -> !x.getGenerateStatus().equals(REPORT_ITEM_STATUS_ARCHIVED)).collect(Collectors.toList());
         // 报告中选中的题目
         String[] quIds = report.getReportQuIds().split(String.valueOf(QU_JOIN_CHAR));
         List<Question> reportQuestions = questionManager.findByQuIds(quIds, true);
@@ -328,6 +373,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         for (SurveyAnswer surveyAnswer : allSurveyAnswers) {
             // reportId + surveyAnswerId:唯一性约束,已有报告认为重新生成
             ReportItem newReportItem = reportItemDao.findByReportIdAndSurveyAnswerId(reportId, surveyAnswer.getId());
+            if (newReportItem != null && newReportItem.getGenerateStatus().equals(REPORT_ITEM_STATUS_ARCHIVED)) {
+                // 跳过已经归档的报告
+                continue;
+            }
             if (newReportItem == null) {
                 newReportItem = new ReportItem();
                 newReportItem.setReportId(reportId);
@@ -350,6 +399,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             HashMap<String, HashMap<String, Object>> quAnswerInfo = parseQuAnswerInfo(surveyAnswer);
             String jsonString = JSON.toJSONString(quAnswerInfo);
             newReportItem.setQuAnswerInfo(jsonString);
+            newReportItem.setVisibility(1);
             reportItemDao.save(newReportItem);
             logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
         }
@@ -384,12 +434,15 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             result.put("title", HtmlUtil.removeTagFromText(question.getQuTitle()));
             int sum = 0;
             for (QuScore quScore : question.getQuScores()) {
-                AnScore first = question.getAnScores().stream().filter(y -> y.getQuRowId().equals(quScore.getId())).findFirst().get();
+                Optional<AnScore> first = question.getAnScores().stream().filter(y -> y.getQuRowId().equals(quScore.getId())).findFirst();
+                if (!first.isPresent()) {
+                    return result;
+                }
                 if (quScore.getScoringType().equals(1)) {
                     // 如果是反向计分
-                    sum += 6 - Integer.parseInt(first.getAnswserScore());
+                    sum += 6 - Integer.parseInt(first.get().getAnswserScore());
                 } else {
-                    sum +=  Integer.parseInt(first.getAnswserScore());
+                    sum +=  Integer.parseInt(first.get().getAnswserScore());
                 }
             }
             result.put("answer", (float) (sum/ question.getQuScores().size()));
@@ -397,7 +450,9 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         if (question.getQuType().equals(QuType.RADIO)) {
             String quItemId = question.getAnRadio().getQuItemId();
             QuRadio quRadio = question.getQuRadios().stream().filter(x -> x.getId().equals(quItemId)).findFirst().orElse(null);
-            assert quRadio != null;
+            if (quRadio == null) {
+                return result;
+            }
             result.put("title", HtmlUtil.removeTagFromText(question.getReportQuTitle()));
             result.put("answer", HtmlUtil.removeTagFromText(quRadio.getOptionName()));
         }
@@ -407,7 +462,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
     @Transactional
     @Override
-    public ReportItem initReportItem(String reportId, String surveyAnswerId) {
+    public ReportItem initReportItem(String reportId, String surveyAnswerId) throws Exception {
         if (reportId == null || surveyAnswerId == null) {
             return null;
         }
@@ -422,7 +477,11 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         return initReportItem(newReportItem);
     }
 
-    private ReportItem initReportItem(ReportItem reportItem) {
+    private ReportItem initReportItem(ReportItem reportItem) throws Exception {
+        if (REPORT_ITEM_STATUS_ARCHIVED.equals(reportItem.getGenerateStatus())) {
+            logger.info("reportItem {} has been archived", reportItem.getId());
+            throw new Exception("该报告已归档，初始化失败");
+        }
         // 解析答卷的用户信息
         SurveyAnswer surveyAnswer = surveyAnswerManager.get(reportItem.getSurveyAnswerId());
         reportItem.setUserId(surveyAnswer.getUserId());
@@ -508,7 +567,11 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
     private Map<String, Map<String, Object>> buildQuAnswerInfo(ReportItem reportItem) {
         HashMap<String, Map<String, Object>> result = new HashMap<>();
         if (reportItem.getQuAnswerInfo() == null) {
-            initReportItem(reportItem);
+            try {
+                initReportItem(reportItem);
+            } catch (Exception e) {
+                return result;
+            }
         }
         Map<String, Object> jsonObject = JSONObject.parseObject(reportItem.getQuAnswerInfo());
         if (jsonObject != null) {

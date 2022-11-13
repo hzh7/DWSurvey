@@ -81,7 +81,7 @@ public class Question extends IdEntity{
 	private Integer answerInputWidth;
 	private Integer answerInputRow;
 
-	private Integer reportQuType;
+	private Integer reportQuType=0;
 
 	private String reportQuTitle;
 
