@@ -101,6 +101,7 @@ public class MyReportItemController {
             reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId);
             return HttpResult.SUCCESS();
         } catch (Exception e) {
+            e.printStackTrace();
             return HttpResult.FAILURE("failed: " + e.getMessage());
         }
     }

@@ -86,10 +86,10 @@ public class SurveyAnswerManagerImpl extends
 	public void saveAnswer(SurveyAnswer surveyAnswer,
 			Map<String, Map<String, Object>> quMaps) {
 		surveyAnswerDao.saveAnswer(surveyAnswer, quMaps);
-		HashMap<String, HashMap<String, Object>> quAnswerInfo = buildQuAnswerInfo(surveyAnswer);
-		String jsonString = JSON.toJSONString(quAnswerInfo);
-		surveyAnswer.setQuAnswerInfo(jsonString);
-		surveyAnswerDao.save(surveyAnswer);
+//		HashMap<String, HashMap<String, Object>> quAnswerInfo = buildQuAnswerInfo(surveyAnswer);
+//		String jsonString = JSON.toJSONString(quAnswerInfo);
+//		surveyAnswer.setQuAnswerInfo(jsonString);
+//		surveyAnswerDao.save(surveyAnswer);
 	}
 
 	@Override

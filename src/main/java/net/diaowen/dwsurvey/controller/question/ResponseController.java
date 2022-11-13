@@ -76,6 +76,38 @@ public class ResponseController {
 		return saveSurvey(request,response,surveyId);
 	}
 
+//	@RequestMapping("/save2.do")
+//	@ResponseBody
+//	public String save2(HttpServletRequest request,HttpServletResponse response,String surveyId) throws Exception {
+//		SurveyDirectory surveyDirectory = null;
+//		try {
+//			surveyDirectory = directoryManager.getSurvey(surveyId);
+//			List<Question> questions = questionManager.find(surveyId, "2");
+//			Map<String, Map<String, Object>> quMaps = buildSaveSurveyMap(request);
+//
+//			for (Question question : questions) {
+//				if (question.getQuTitle().contains("姓名")) {
+//					name = question.getAnFillblank().getAnswer();
+//				}
+//				if (question.getQuTitle().contains("邮箱")) {
+//					email = question.getAnFillblank().getAnswer();
+//				}
+//				if (question.getQuTitle().equals("身份证号")) {
+//					String idCard = question.getAnFillblank().getAnswer();
+//					if (idCard.length() != 18) {
+//						return;
+//					}
+//				}
+//			}
+//
+//			if(!answerCheckData.isAnswerCheck())
+//				return answerRedirect(directory,answerCheckData.getAnswerCheckCode());
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return answerRedirect(directory,5);
+//		}
+//	}
+
 	@Deprecated
 	@RequestMapping("/saveReport.do")
 	public String saveReport(HttpServletRequest request,HttpServletResponse response,String reportId) throws Exception {

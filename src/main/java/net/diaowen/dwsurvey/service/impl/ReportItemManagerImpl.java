@@ -346,7 +346,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                 newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);
                 newReportItem.setGenerateDate(null);
             }
-
+            // 答卷内容解析
             HashMap<String, HashMap<String, Object>> quAnswerInfo = parseQuAnswerInfo(surveyAnswer);
             String jsonString = JSON.toJSONString(quAnswerInfo);
             newReportItem.setQuAnswerInfo(jsonString);
@@ -363,7 +363,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         // 答卷的题目及答案内容
         List<Question> questions = surveyAnswerManager.findAnswerDetail(t);
         for (Question question : questions) {
-            result.put(question.getId(), getQuestionAnswer(question));
+            HashMap<String, Object> questionAnswer = getQuestionAnswer(question);
+            if (questionAnswer.containsKey("title") && questionAnswer.containsKey("answer")) {
+                result.put(question.getId(), questionAnswer);
+            }
         }
         return result;
     }
@@ -416,16 +419,24 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             newReportItem.setCreateDate(new Date());
             newReportItem.setSurveyAnswerId(surveyAnswerId);
         }
-        // 解析答卷的用户信息
-        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
-        newReportItem.setUserId(surveyAnswer.getUserId());
-        User user = accountManager.getUser(surveyAnswer.getUserId());
-        newReportItem.setUserName(user.getName());
+        return initReportItem(newReportItem);
+    }
 
-        newReportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);  // todo
-        reportItemDao.save(newReportItem);
-        logger.info("reportId {} reportItem id: {} initReportItem done", reportId, newReportItem.getId());
-        return newReportItem;
+    private ReportItem initReportItem(ReportItem reportItem) {
+        // 解析答卷的用户信息
+        SurveyAnswer surveyAnswer = surveyAnswerManager.get(reportItem.getSurveyAnswerId());
+        reportItem.setUserId(surveyAnswer.getUserId());
+        User user = accountManager.getUser(surveyAnswer.getUserId());
+        reportItem.setUserName(user.getName());
+
+        reportItem.setGenerateStatus(REPORT_ITEM_STATUS_INIT);  // todo
+        // 答卷内容
+        HashMap<String, HashMap<String, Object>> quAnswerInfo = parseQuAnswerInfo(surveyAnswer);
+        String jsonString = JSON.toJSONString(quAnswerInfo);
+        reportItem.setQuAnswerInfo(jsonString);
+        reportItemDao.save(reportItem);
+        logger.info("reportId {} reportItem id: {} initReportItem done", reportItem.getReportId(), reportItem.getId());
+        return reportItem;
     }
 
     /**
@@ -496,9 +507,14 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
      */
     private Map<String, Map<String, Object>> buildQuAnswerInfo(ReportItem reportItem) {
         HashMap<String, Map<String, Object>> result = new HashMap<>();
+        if (reportItem.getQuAnswerInfo() == null) {
+            initReportItem(reportItem);
+        }
         Map<String, Object> jsonObject = JSONObject.parseObject(reportItem.getQuAnswerInfo());
-        for (String s : jsonObject.keySet()) {
-            result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+        if (jsonObject != null) {
+            for (String s : jsonObject.keySet()) {
+                result.put(s, JSONObject.parseObject(jsonObject.get(s).toString()));
+            }
         }
         return result;
     }

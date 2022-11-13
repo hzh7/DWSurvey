@@ -72,6 +72,7 @@ public class ReportItemDaoImpl extends BaseDaoImpl<ReportItem, String> implement
         try {
             AssertUtils.notNull(reportItem, "entity不能为空");
             getSession().merge(reportItem);
+            getSession().flush();
             logger.debug("save entity: {}", reportItem);
         } catch (Exception e) {
             e.printStackTrace();
