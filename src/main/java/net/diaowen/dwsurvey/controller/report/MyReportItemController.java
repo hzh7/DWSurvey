@@ -91,13 +91,13 @@ public class MyReportItemController {
                 return HttpResult.FAILURE(e.getMessage());
             }
         }
-        // 生成报告
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
-        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
-        if (!Objects.equals(report.getSurveyId(), surveyAnswer.getSurveyId())) {
-            return HttpResult.FAILURE("答卷与报告配置不匹配");
-        }
         try {
+            // 生成报告
+            ReportDirectory report = reportDirectoryManager.getReport(reportId);
+            SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+            if (!Objects.equals(report.getSurveyId(), surveyAnswer.getSurveyId())) {
+                return HttpResult.FAILURE("答卷与报告配置不匹配");
+            }
             reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId);
             return HttpResult.SUCCESS();
         } catch (Exception e) {

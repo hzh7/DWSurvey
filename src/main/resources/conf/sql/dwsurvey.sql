@@ -903,6 +903,21 @@ CREATE TABLE `t_report_item` (
                                  KEY `report_id_index` (`report_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
+ALTER TABLE t_report_item ADD COLUMN (
+    `qu_answer_info` text null comment '答卷的题目与答案内容'
+);
+alter table t_report_directory add column (
+     `report_qu_ids`       text          null comment '配置进入报告的题目id，分号分隔'
+);
+
+ALTER TABLE t_qu_score ADD COLUMN (
+    `scoring_type`   int DEFAULT 0 COMMENT '计分方式：0 正向计分,1 反向计分'
+);
+ALTER TABLE t_question ADD COLUMN (
+    `report_qu_type` int DEFAULT 0 comment '报告题目类型：0 信息题,1 维表题',
+    `report_qu_title` varchar(100) null comment '报告展示题目名'
+)
+
 
 -- select  *
 -- from t_survey_answer

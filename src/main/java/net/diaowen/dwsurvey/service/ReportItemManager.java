@@ -29,13 +29,17 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	/**
 	 * 生成pdf报告
 	 */
-	@Deprecated
 	public ReportItem initAndGeneratePdfReport(String reportId, String surveyAnswerId) throws Exception;
+
+	/**
+	 * 将surveyAnswer答卷相关的所有报告归档
+	 */
+	public void archivedReportItemBySurveyAnswer(SurveyAnswer surveyAnswer);
 
 	/**
 	 * 新增了一份答卷时，触发问卷对应所有报告的生成
 	 */
-	public void initAndGenerateReportItem(SurveyAnswer surveyAnswer) throws Exception;
+	public void initReportItemBySurveyAnswer(SurveyAnswer surveyAnswer) throws Exception;
 	public ReportItem generatePdfReport(ReportItem reportItem) throws Exception;
 
 	/**
@@ -43,7 +47,7 @@ public interface ReportItemManager extends BaseService<ReportItem, String>{
 	 */
 	public void initReportItem(String reportId, Boolean rebuild);
 
-	public ReportItem initReportItem(String reportId, String surveyAnswerId);
+	public ReportItem initReportItem(String reportId, String surveyAnswerId) throws Exception;
 
 	/**
 	 * 生成一份配置的报告的预览pdf

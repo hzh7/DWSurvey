@@ -86,11 +86,12 @@ public class ScheduleTask {
             List<ReportItem> reportItems = reportItemManager.findByStatus(reportDirectory.getId(), REPORT_ITEM_STATUS_INIT);
             for (ReportItem reportItem : reportItems) {
                 try {
+                    logger.info("generatePdfReport for reportItem {}", reportItem.getId());
                     reportItemManager.generatePdfReport(reportItem);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     logger.error(e.getMessage());
                 }
-                logger.info("generatePdfReport for reportItem {}", reportItem.getId());
             }
         }
         logger.info(LocalDateTime.now() + "  报告监控定时任务执行完成");

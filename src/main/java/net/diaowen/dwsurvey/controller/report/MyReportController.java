@@ -104,10 +104,6 @@ public class MyReportController {
     @ResponseBody
     public HttpResult reportQuSave(@RequestBody List<Question> questions, String reportId) {
         try {
-            System.out.println("reportId: " + reportId);
-            for (Question question : questions) {
-                System.out.println(question);
-            }
             boolean res = reportDirectoryManager.reportQuSave(questions, reportId);
             return HttpResult.SUCCESS(res);
         } catch (Exception e){
@@ -165,14 +161,15 @@ public class MyReportController {
                 return HttpResult.FAILURE(e.getMessage());
             }
         }
-        // 生成报告
-        ReportDirectory report = reportDirectoryManager.getReport(reportId);
-        SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
-        if (!Objects.equals(report.getSurveyId(), surveyAnswer.getSurveyId())) {
-            return HttpResult.FAILURE("答卷与报告配置不匹配");
-        }
         try {
-            return HttpResult.SUCCESS(reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId));
+            // 生成报告
+            ReportDirectory report = reportDirectoryManager.getReport(reportId);
+            SurveyAnswer surveyAnswer = surveyAnswerManager.get(surveyAnswerId);
+            if (!Objects.equals(report.getSurveyId(), surveyAnswer.getSurveyId())) {
+                return HttpResult.FAILURE("答卷与报告配置不匹配");
+            }
+            reportItemManager.initAndGeneratePdfReport(reportId, surveyAnswerId);
+            return HttpResult.SUCCESS();
         } catch (Exception e) {
             return HttpResult.SUCCESS("failed: " + e.getMessage());
         }

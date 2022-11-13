@@ -22,6 +22,7 @@ public class CommonStatic {
     public static Integer REPORT_ITEM_STATUS_GENERATING = 1;  // 生成中
     public static Integer REPORT_ITEM_STATUS_SUCCESS = 2;  // 生成完成
     public static Integer REPORT_ITEM_STATUS_FAILED = 3;  // 生成失败
+    public static Integer REPORT_ITEM_STATUS_ARCHIVED = 4;  // 已归档
 
 
     public static List<String> PRIMARY_SCHOOL = Arrays.asList("一年级", "二年级", "三年级", "四年级", "五年级",
