@@ -226,6 +226,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             if (question != null && question.getReportQuType().equals(0)) {
                 // 维度信息题
                 Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
+                if (stringObjectMap == null) {
+                    // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过
+                    continue;
+                }
                 HashMap<String, Object> quAnswerMap = new HashMap<>();
                 String title = stringObjectMap.get("title").toString();
                 quAnswerMap.put("key", title);
@@ -254,6 +258,10 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             }
             // 量表题
             Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
+            if (stringObjectMap == null) {
+                // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过
+                continue;
+            }
             HashMap<String, Object> quAnswerMap = new HashMap<>() ;
             quAnswerMap.put("key", stringObjectMap.get("title"));
             quAnswerMap.put("score", stringObjectMap.get("answer"));

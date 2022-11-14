@@ -17,13 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_ITEM_STATUS_SUCCESS;
-import static net.diaowen.dwsurvey.common.CommonStatic.REPORT_STATUS_EDIT;
+import static net.diaowen.dwsurvey.common.CommonStatic.*;
 
 @Controller
 @RequestMapping("/api/dwsurvey/app/report")
@@ -189,7 +185,8 @@ public class MyReportController {
             if (!report.getUserId().equals(curUser.getId()) && !reportItem.getUserId().equals(curUser.getId())) {
                 return;
             }
-            if (Objects.equals(reportItem.getGenerateStatus(), REPORT_ITEM_STATUS_SUCCESS) && reportItem.getPdfAddr() != null) {
+            if (Arrays.asList(REPORT_ITEM_STATUS_SUCCESS, REPORT_ITEM_STATUS_ARCHIVED).contains(reportItem.getGenerateStatus())
+                    && reportItem.getPdfAddr() != null) {
                 File file = new File(reportItem.getPdfAddr());
                 FileInputStream fileInputStream = new FileInputStream(file);
                 OutputStream outputStream = response.getOutputStream();

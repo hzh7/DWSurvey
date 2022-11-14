@@ -7,7 +7,7 @@ dwsurvey:
     resource-url: http://101.35.108.146
     pdf-server-url: http://localhost:8082
     info:
-      site-name: xxx网
+      site-name: 上海市普陀新素养教育服务中心
       site-url: http://www.diaowen.net
       site-icp: 待备案
       site-mail: test@xxx.com
