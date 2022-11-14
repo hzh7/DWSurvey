@@ -15,7 +15,7 @@ dwsurvey:
     # 站点信息配置，会出现在底部footer区
     info:
       # 站点名称
-      site-name: xxx网
+      site-name: 上海市普陀新素养教育服务中心
       # 站点名称，对应的URL地址
       site-url: http://www.diaowen.net
       # 站点备案号
