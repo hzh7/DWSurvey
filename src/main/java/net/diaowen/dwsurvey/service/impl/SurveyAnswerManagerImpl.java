@@ -857,13 +857,17 @@ public class SurveyAnswerManagerImpl extends
 			if (question.getQuTitle().contains("邮箱")) {
 				email = question.getAnFillblank().getAnswer();
 			}
-			if (question.getQuTitle().equals("身份证号")) {
-				String idCard = question.getAnFillblank().getAnswer();
-				if (idCard.length() != 18) {
-					logger.info("surveyAnswer {} idCard.length() != 18", surveyAnswer.getId());
-					return;
+			if (question.getQuTitle().equals("学生证号")) {
+				String studentId = question.getAnFillblank().getAnswer();
+				// if (idCard.length() != 18) {
+				// 	logger.info("surveyAnswer {} idCard.length() != 18", surveyAnswer.getId());
+				// 	return;
+				// }
+				if (studentId.length() > 6) {
+					pwd = studentId.substring(studentId.length()-6);  // 学生证号后6位作为默认密码
+				} else {
+					pwd = studentId;
 				}
-				pwd = idCard.substring(idCard.length()-6);  // 身份证号后6位作为默认密码
 			}
 		}
 		// 匿名下的答卷根据问卷信息回填答卷用户id

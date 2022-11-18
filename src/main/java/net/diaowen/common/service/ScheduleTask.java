@@ -43,7 +43,7 @@ public class ScheduleTask {
     /**
      * 监控报告对应问卷的样本量，当样本量达到预设值，则初始化该报告
      */
-    @Scheduled(cron = "0 */1 * * * ?")
+    @Scheduled(cron = "0 */10 * * * ?")
     private void reportMonitorTasks() {
         logger.info(LocalDateTime.now() + "  执行报告监控定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_ACTIVATED);
@@ -77,7 +77,7 @@ public class ScheduleTask {
     /**
      * 获取初始化状态的报告项，依次生成
      */
-    @Scheduled(cron = "0 */1 * * * ?")
+    @Scheduled(cron = "0 */5 * * * ?")
     private void generatePdfReport() throws Exception {
         logger.info(LocalDateTime.now() + "  执行报告生成定时任务");
         List<ReportDirectory> reportDirectories = reportDirectoryManager.findByState(REPORT_STATUS_EFFECTIVE);
