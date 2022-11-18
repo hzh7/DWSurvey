@@ -27,7 +27,7 @@ public class CommonStatic {
 
     public static List<String> PRIMARY_SCHOOL = Arrays.asList("一年级", "二年级", "三年级", "四年级", "五年级",
             "小学一年级", "小学二年级", "小学三年级", "小学四年级", "小学五年级");  // 小学
-    public static List<String> JUNIOR_HIGH_SCHOOL = Arrays.asList("预备初一", "初一", "初二", "初三");  // 初中
+    public static List<String> JUNIOR_HIGH_SCHOOL = Arrays.asList("预备初一", "预初", "初一", "初二", "初三");  // 初中
     public static List<String> HIGH_SCHOOL = Arrays.asList("高一", "高二", "高三");  // 高中
 
     public static final char QU_JOIN_CHAR = ';';
