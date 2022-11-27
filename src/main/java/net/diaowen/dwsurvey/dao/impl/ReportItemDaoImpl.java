@@ -68,6 +68,7 @@ public class ReportItemDaoImpl extends BaseDaoImpl<ReportItem, String> implement
         return query.executeUpdate();
     }
 
+    @Transactional
     public void save(ReportItem reportItem){
         try {
             AssertUtils.notNull(reportItem, "entity不能为空");

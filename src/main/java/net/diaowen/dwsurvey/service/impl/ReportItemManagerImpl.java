@@ -233,8 +233,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             if (question != null && question.getReportQuType().equals(0)) {
                 // 维度信息题
                 Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
-                if (stringObjectMap == null) {
-                    // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过
+                if (stringObjectMap == null || !stringObjectMap.containsKey("answer")) {
+                    // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过 or 选填未答的题目
                     continue;
                 }
                 HashMap<String, Object> quAnswerMap = new HashMap<>();
@@ -265,8 +265,8 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
             }
             // 量表题
             Map<String, Object> stringObjectMap = quAnswerInfo.get(question.getId());
-            if (stringObjectMap == null) {
-                // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过
+            if (stringObjectMap == null || !stringObjectMap.containsKey("answer")) {
+                // 答卷填写后问卷又新增了题目，这里会为null，这种新增题目报告中跳过 or 选填未答的题目
                 continue;
             }
             HashMap<String, Object> quAnswerMap = new HashMap<>() ;
@@ -285,6 +285,9 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
 
         // 人数相关的统计信息
         Map<String, Object> statisticsMap = new HashMap<>();
+
+        // 参加本次评估的人数
+        statisticsMap.put("all_uv", allReportItems.size());
         statisticsMap.put("grade", grade);
         String gradeRange;
         if (PRIMARY_SCHOOL.contains(grade)) {
@@ -306,26 +309,26 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
         ).count());
 
         String finalSchoolQuId = schoolQuId;
-        // 学校数量基于年级段范围
-        statisticsMap.put("school_num", (int) gradeRangeItems.stream().map(x -> {
+        // 学校数量基于年级段范围 statisticsMap.put("school_num", (int) gradeRangeItems.stream().map(x -> {
+        // 改为全体测试人的学校
+        statisticsMap.put("school_num", (int) allReportItems.stream().map(x -> {
             Map<String, Map<String, Object>> theQuAnswerInfo = buildQuAnswerInfo(x);
             return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString();
         }).distinct().count());
 
-        statisticsMap.put("same_school_uv", (int) allReportItems.stream().filter(
+        /*statisticsMap.put("same_school_uv", (int) allReportItems.stream().filter(
                 x -> {
                     Map<String, Map<String, Object>> theQuAnswerInfo = buildQuAnswerInfo(x);
                     return theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString());
                 }
         ).count());
-
         statisticsMap.put("same_school_grade_uv", (int) allReportItems.stream().filter(
                 x -> {
                     Map<String, Map<String, Object>> theQuAnswerInfo = buildQuAnswerInfo(x);
                     return (theQuAnswerInfo.get(finalGradeQuId).get("answer").toString().equals(quAnswerInfo.get(finalGradeQuId).get("answer").toString()) &&
                             theQuAnswerInfo.get(finalSchoolQuId).get("answer").toString().equals(quAnswerInfo.get(finalSchoolQuId).get("answer").toString()));
                 }
-        ).count());
+        ).count());*/
 
         HashMap<String, Object> reportData = new HashMap<>();
         reportData.put("reportId", reportId);
@@ -462,7 +465,7 @@ public class ReportItemManagerImpl extends BaseServiceImpl<ReportItem, String> i
                     sum +=  Integer.parseInt(first.get().getAnswserScore());
                 }
             }
-            result.put("answer", (float) (sum/ question.getQuScores().size()));
+            result.put("answer",  Math.round((float)sum / (float)question.getQuScores().size() * 100) / 100f);
         }
         if (question.getQuType().equals(QuType.RADIO)) {
             String quItemId = question.getAnRadio().getQuItemId();
